@@ -9,7 +9,7 @@ const palette = {
   blue: "#3066be",
   teal: "#0f8b8d",
   coral: "#e85d4f",
-  amber: "#f2b705",
+  amber: "#d92d20",
   green: "#4f9d69",
   purple: "#7653c7",
 };
@@ -3866,11 +3866,11 @@ const mechanicsWorkshopChapters = [
         number: "M-2",
         unit: "力学专题实验库",
         title: "动量守恒模型组",
-        focus: "在碰撞、爆炸、火箭、人船和弹簧小球模型间切换",
-        subtitle: "把动量守恒的常见题型做成一个模型组，比较系统内力、外力、质心运动和能量损失。",
+        focus: "在一维碰撞、二维碰撞、爆炸、火箭、人船、弹簧、动飞摆、凹槽和斜面模型间切换",
+        subtitle: "把动量守恒的常见题型做成一个模型组，比较系统内力、外力、质心运动、矢量分解和能量损失。",
         caption: "动量守恒多模型实验",
         sim: "momentumWorkshop",
-        formulas: ["系统外力为零或可忽略：Σp 守恒", "碰撞中动量守恒，机械能不一定守恒", "质心速度由系统总动量决定"],
+        formulas: ["系统外力为零或可忽略：Σp 守恒", "二维问题：px、py 分别守恒", "质心速度由系统总动量决定"],
         questions: [
           "什么时候可以把两个物体看成一个系统？",
           "动量守恒是否意味着动能也守恒？",
@@ -3883,17 +3883,23 @@ const mechanicsWorkshopChapters = [
         ],
         controls: [
           segmented("model", "专题模型", "collision", [
-            ["碰撞", "collision"],
+            ["一维碰撞", "collision"],
+            ["二维碰撞", "collision2d"],
             ["爆炸", "explosion"],
             ["火箭", "rocket"],
             ["人船", "boat"],
             ["弹簧小球", "spring"],
+            ["动飞摆", "pendulum"],
+            ["小球凹槽", "groove"],
+            ["小球斜面", "ballSlope"],
           ]),
           range("m1", "质量 m₁", 0.5, 8, 0.1, 2.5, "kg"),
           range("m2", "质量 m₂", 0.5, 8, 0.1, 3.5, "kg"),
           range("v1", "初速度 v₁", -8, 8, 0.2, 4, "m/s"),
           range("v2", "初速度 v₂", -8, 8, 0.2, -1, "m/s"),
           range("elasticity", "恢复系数 e", 0, 1, 0.02, 0.78, ""),
+          range("angle2d", "二维/斜面角 θ", 0, 70, 1, 28, "°"),
+          range("fragments", "碎片/轨迹数", 3, 8, 1, 5, "个"),
           toggle("showCenterMass", "显示质心", true),
         ],
         stats: (v) => {
@@ -4049,49 +4055,49 @@ const books = [
     id: "mechanicsLab",
     title: "力学专题实验库",
     shortTitle: "力学专题",
-    meta: "6 个专题实验",
+    meta: "1 个专题章",
     chapters: mechanicsWorkshopChapters,
   },
   {
     id: "required1",
     title: "必修第一册",
     shortTitle: "必修一",
-    meta: "19 节演示",
+    meta: "4 章",
     chapters,
   },
   {
     id: "required2",
     title: "必修第二册",
     shortTitle: "必修二",
-    meta: "18 节演示",
+    meta: "4 章",
     chapters: required2Chapters,
   },
   {
     id: "required3",
     title: "必修第三册",
     shortTitle: "必修三",
-    meta: "23 节演示",
+    meta: "5 章",
     chapters: required3Chapters,
   },
   {
     id: "selective1",
     title: "选择性必修第一册",
     shortTitle: "选必一",
-    meta: "23 节演示",
+    meta: "4 章",
     chapters: selective1Chapters,
   },
   {
     id: "selective2",
     title: "选择性必修第二册",
     shortTitle: "选必二",
-    meta: "19 节演示",
+    meta: "5 章",
     chapters: selective2Chapters,
   },
   {
     id: "selective3",
     title: "选择性必修第三册",
     shortTitle: "选必三",
-    meta: "23 节演示",
+    meta: "5 章",
     chapters: selective3Chapters,
   },
 ];
@@ -4186,30 +4192,29 @@ function getActiveModule() {
   return modules.find((module) => module.id === state.activeId) || modules[0];
 }
 
+function getActiveChapter() {
+  const active = getActiveModule();
+  return activeBook.chapters.find((chapter) => chapter.sections.some((section) => section.id === active.id)) || activeBook.chapters[0];
+}
+
 function getValues() {
   return valuesByModule[state.activeId];
 }
 
 function renderNav() {
   brandTitle.textContent = activeBook.title;
-  if (metaPills[2]) metaPills[2].textContent = activeBook.meta;
+  if (metaPills[2]) metaPills[2].textContent = `${activeBook.chapters.length} 章`;
+  const activeChapter = getActiveChapter();
   lessonNav.innerHTML = activeBook.chapters
     .map(
       (chapter) => `
-        <div class="chapter-label">${chapter.title}</div>
-        ${chapter.sections
-          .map(
-            (section) => `
-              <button class="lesson-button ${section.id === state.activeId ? "active" : ""}" type="button" data-lesson="${section.id}">
-                <span class="lesson-index">${section.number}</span>
-                <span>
-                  <span class="lesson-name">${section.title}</span>
-                  <span class="lesson-focus">${section.focus}</span>
-                </span>
-              </button>
-            `,
-          )
-          .join("")}
+        <button class="lesson-button ${chapter.id === activeChapter.id ? "active" : ""}" type="button" data-chapter="${chapter.id}">
+          <span class="lesson-index">${chapter.sections.length}</span>
+          <span>
+            <span class="lesson-name">${chapter.title}</span>
+            <span class="lesson-focus">${chapter.sections.length} 个章内演示主题</span>
+          </span>
+        </button>
       `,
     )
     .join("");
@@ -4217,9 +4222,10 @@ function renderNav() {
 
 function renderLessonMeta() {
   const module = getActiveModule();
-  lessonUnit.textContent = `${module.unit} · ${module.number}`;
-  lessonTitle.textContent = module.title;
-  lessonSubtitle.textContent = module.subtitle;
+  const chapter = getActiveChapter();
+  lessonUnit.textContent = activeBook.title;
+  lessonTitle.textContent = chapter.title;
+  lessonSubtitle.textContent = `当前演示：${module.title}。${module.subtitle}`;
   stageCaption.textContent = module.caption;
   questionList.innerHTML = module.questions.map((question) => `<li>${question}</li>`).join("");
   formulaBox.innerHTML = module.formulas.map((formula) => `<div class="formula-line">${formula}</div>`).join("");
@@ -4229,7 +4235,31 @@ function renderLessonMeta() {
 
 function renderControls() {
   const values = getValues();
-  controlGroups.innerHTML = getActiveModule()
+  const activeChapter = getActiveChapter();
+  const module = getActiveModule();
+  const chapterTopics = activeChapter.sections
+    .map(
+      (section) => `
+        <button
+          class="segment-button ${section.id === module.id ? "active" : ""}"
+          type="button"
+          data-topic="${section.id}"
+        >${section.title}</button>
+      `,
+    )
+    .join("");
+  const topicControl = `
+    <div class="control-item chapter-topic-control">
+      <div class="control-label">
+        <span>本章演示主题</span>
+        <span class="control-output">${module.title}</span>
+      </div>
+      <div class="segmented chapter-topic-grid" role="group" aria-label="本章演示主题">
+        ${chapterTopics}
+      </div>
+    </div>
+  `;
+  controlGroups.innerHTML = topicControl + module
     .controls.map((control) => {
       if (control.type === "range") {
         return `
@@ -8907,11 +8937,15 @@ function drawElementaryParticles(v) {
 }
 
 function momentumModelLabel(model) {
+  if (model === "collision2d") return "二维碰撞";
   if (model === "explosion") return "爆炸";
   if (model === "rocket") return "火箭";
   if (model === "boat") return "人船";
   if (model === "spring") return "弹簧小球";
-  return "碰撞";
+  if (model === "pendulum") return "动飞摆";
+  if (model === "groove") return "小球凹槽";
+  if (model === "ballSlope") return "小球斜面";
+  return "一维碰撞";
 }
 
 function drawForceCompositionStudio(v) {
@@ -8999,7 +9033,38 @@ function drawMomentumWorkshop(v) {
   const pTotal = v.m1 * v.v1 + v.m2 * v.v2;
   const vcm = pTotal / (v.m1 + v.m2);
   drawGround(y + 46);
-  if (v.model === "rocket") {
+  if (v.model === "collision2d") {
+    const theta = toRad(v.angle2d);
+    const phase = wrap(state.time, 4) / 4;
+    const before = phase < 0.5;
+    const t = before ? phase / 0.5 : (phase - 0.5) / 0.5;
+    const center = { x: w * 0.48, y: h * 0.47 };
+    const incoming1 = { x: lerp(90, center.x - 26, t), y: lerp(center.y - 80, center.y - 18, t) };
+    const incoming2 = { x: lerp(w - 105, center.x + 26, t), y: lerp(center.y + 72, center.y + 18, t) };
+    const outgoing1 = { x: lerp(center.x - 26, center.x - 130 * Math.cos(theta), t), y: lerp(center.y - 18, center.y - 90 * Math.sin(theta), t) };
+    const outgoing2 = { x: lerp(center.x + 26, center.x + 150 * Math.cos(theta), t), y: lerp(center.y + 18, center.y + 110 * Math.sin(theta), t) };
+    const b1 = before ? incoming1 : outgoing1;
+    const b2 = before ? incoming2 : outgoing2;
+    ctx.fillStyle = "#f8fafc";
+    ctx.strokeStyle = palette.line;
+    ctx.lineWidth = 2;
+    roundRect(62, 76, w * 0.68, h * 0.62, 8, "#f8fafc", palette.line);
+    ctx.setLineDash([6, 6]);
+    arrow(center.x - 150, center.y, center.x + 150, center.y, palette.muted, 1.4);
+    arrow(center.x, center.y + 120, center.x, center.y - 120, palette.muted, 1.4);
+    ctx.setLineDash([]);
+    ctx.fillStyle = palette.blue;
+    ctx.beginPath();
+    ctx.arc(b1.x, b1.y, 21, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = palette.coral;
+    ctx.beginPath();
+    ctx.arc(b2.x, b2.y, 17, 0, TAU);
+    ctx.fill();
+    vector(b1, before ? 72 : -70 * Math.cos(theta), before ? 42 : -54 * Math.sin(theta), palette.blue, "p₁");
+    vector(b2, before ? -68 : 78 * Math.cos(theta), before ? -35 : 58 * Math.sin(theta), palette.coral, "p₂");
+    label("px、py 分别守恒", 74, 58, palette.ink, "left", 17);
+  } else if (v.model === "rocket") {
     const x = w * 0.42 + wrap(vcm * state.time * 24, w * 0.25) - w * 0.12;
     roundRect(x - 58, y - 54, 116, 54, 18, palette.coral, palette.ink);
     label("火箭", x, y - 27, "#fff", "center", 15);
@@ -9012,6 +9077,83 @@ function drawMomentumWorkshop(v) {
     drawPerson(personX, y - 16);
     vector({ x: personX, y: y - 88 }, v.v1 * 18, 0, palette.coral, "人");
     vector({ x: w * 0.39, y: y + 62 }, -v.v1 * v.m1 / v.m2 * 18, 0, palette.teal, "船");
+  } else if (v.model === "pendulum") {
+    const pivot = { x: w * 0.34, y: 76 };
+    const phase = wrap(state.time, 5) / 5;
+    const release = phase > 0.46;
+    const swing = toRad(42) * Math.cos(phase * Math.PI * 1.4);
+    const bob = release
+      ? { x: pivot.x + 115 + (phase - 0.46) * 360, y: pivot.y + 124 + (phase - 0.46) ** 2 * 420 }
+      : { x: pivot.x + Math.sin(swing) * 150, y: pivot.y + Math.cos(swing) * 150 };
+    ctx.strokeStyle = palette.ink;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(pivot.x - 82, pivot.y);
+    ctx.lineTo(pivot.x + 82, pivot.y);
+    if (!release) {
+      ctx.moveTo(pivot.x, pivot.y);
+      ctx.lineTo(bob.x, bob.y);
+    }
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(232,93,79,0.38)";
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.moveTo(pivot.x + 115, pivot.y + 124);
+    ctx.quadraticCurveTo(pivot.x + 250, pivot.y + 104, pivot.x + 360, pivot.y + 220);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = palette.coral;
+    ctx.beginPath();
+    ctx.arc(bob.x, bob.y, 18, 0, TAU);
+    ctx.fill();
+    vector(bob, release ? 72 : Math.cos(swing) * 42, release ? 18 : -Math.sin(swing) * 42, palette.teal, "p");
+    label("摆动阶段近似看作系统内动量传递，脱离后转为抛体运动。", 60, h - 70, palette.ink, "left", 14);
+  } else if (v.model === "groove") {
+    const baseX = w * 0.46 + Math.sin(state.time * 0.7) * 36;
+    const baseY = y + 12;
+    const phase = (Math.sin(state.time * 1.1 - Math.PI / 2) + 1) / 2;
+    const a = Math.PI + phase * Math.PI;
+    const r = 126;
+    roundRect(baseX - 175, baseY - 8, 350, 36, 8, "rgba(48,102,190,0.10)", palette.blue);
+    ctx.strokeStyle = palette.ink;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(baseX, baseY - 20, r, Math.PI, TAU);
+    ctx.stroke();
+    const bx = baseX + Math.cos(a) * r;
+    const by = baseY - 20 + Math.sin(a) * r;
+    ctx.fillStyle = palette.coral;
+    ctx.beginPath();
+    ctx.arc(bx, by, 17, 0, TAU);
+    ctx.fill();
+    vector({ x: bx, y: by - 32 }, -Math.sin(a) * 70, Math.cos(a) * 32, palette.teal, "v");
+    label("凹槽与小球构成水平外力近似为零的系统", 60, 62, palette.ink, "left", 16);
+  } else if (v.model === "ballSlope") {
+    const theta = toRad(clamp(v.angle2d, 8, 58));
+    const phase = wrap(state.time * 0.22, 1);
+    const wedgeX = w * 0.44 - phase * 72;
+    const baseY = y + 42;
+    const length = 280;
+    const top = { x: wedgeX + length * Math.cos(theta), y: baseY - length * Math.sin(theta) };
+    const low = { x: wedgeX, y: baseY };
+    ctx.fillStyle = "#f8fafc";
+    ctx.strokeStyle = palette.ink;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(low.x, low.y);
+    ctx.lineTo(top.x, top.y);
+    ctx.lineTo(top.x, low.y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    const bx = lerp(top.x - 12, low.x + 52, phase);
+    const by = lerp(top.y + 8, low.y - 22, phase);
+    ctx.fillStyle = palette.coral;
+    ctx.beginPath();
+    ctx.arc(bx, by, 17, 0, TAU);
+    ctx.fill();
+    vector({ x: bx, y: by - 38 }, 64 * Math.cos(theta), 64 * Math.sin(theta), palette.teal, "v球");
+    vector({ x: wedgeX + 115, y: baseY + 42 }, -54, 0, palette.blue, "v斜面");
   } else if (v.model === "spring") {
     const phase = (Math.sin(state.time * 1.4 - Math.PI / 2) + 1) / 2;
     const sep = 44 + phase * 180;
@@ -9025,7 +9167,12 @@ function drawMomentumWorkshop(v) {
     const sep = phase * 230;
     drawBlock(w * 0.5 - sep * v.m2 / (v.m1 + v.m2), y, 68, 44, palette.blue);
     drawBlock(w * 0.5 + sep * v.m1 / (v.m1 + v.m2), y, 68, 44, palette.coral);
-    for (let i = 0; i < 10; i += 1) arrow(w * 0.5, y - 28, w * 0.5 + Math.cos(i * TAU / 10) * 72, y - 28 + Math.sin(i * TAU / 10) * 72, palette.amber, 1.5);
+    const fragments = Math.round(v.fragments);
+    for (let i = 0; i < fragments; i += 1) {
+      const a = (i * TAU) / fragments + 0.2;
+      const dist = 52 + phase * 80 * (1 + (i % 2) * 0.18);
+      arrow(w * 0.5, y - 28, w * 0.5 + Math.cos(a) * dist, y - 28 + Math.sin(a) * dist, palette.amber, 1.5);
+    }
   } else {
     const e = v.elasticity;
     const u1 = v.v1;
@@ -9700,9 +9847,11 @@ bookSwitcher.addEventListener("click", (event) => {
 });
 
 lessonNav.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-lesson]");
+  const button = event.target.closest("[data-chapter]");
   if (!button) return;
-  state.activeId = button.dataset.lesson;
+  const chapter = activeBook.chapters.find((item) => item.id === button.dataset.chapter);
+  if (!chapter) return;
+  state.activeId = chapter.sections[0].id;
   state.time = 0;
   renderNav();
   renderLessonMeta();
@@ -9719,6 +9868,17 @@ controlGroups.addEventListener("input", (event) => {
 });
 
 controlGroups.addEventListener("click", (event) => {
+  const topic = event.target.closest("[data-topic]");
+  if (topic) {
+    state.activeId = topic.dataset.topic;
+    state.time = 0;
+    renderNav();
+    renderLessonMeta();
+    renderControls();
+    drawFrame();
+    return;
+  }
+
   const segment = event.target.closest("[data-segment]");
   if (!segment) return;
   getValues()[segment.dataset.segment] = segment.dataset.value;
