@@ -113,6 +113,49 @@ const chapters = [
         stats: (v) => [`v₀ = ${v.initialVelocity.toFixed(1)}m/s`, `a = ${(v.motionMode === "uniform" ? 0 : v.acceleration).toFixed(1)}m/s²`, v.motionMode === "uniform" ? "x-t 直线" : "x-t 曲线"],
       },
       {
+        id: "pursuit-encounter",
+        number: "1-Z1",
+        unit: "第一章 运动的描述",
+        title: "追及相遇与相对运动",
+        focus: "把同向直线运动转化为相对位移和相对速度问题",
+        subtitle:
+          "两辆小车在同一直线上运动时，观察相对距离、相对速度和相遇条件的同步变化，帮助学生把参考系思想迁移到追及问题。",
+        caption: "双车追及实验台",
+        sim: "pursuitEncounter",
+        formulas: ["xA = xA0 + vA t + 1/2 aA t²", "xB = xB0 + vB t + 1/2 aB t²", "相遇条件：xA = xB"],
+        questions: [
+          "A 车速度更大时一定能追上 B 车吗？",
+          "若两车加速度不同，最近距离出现在什么时候？",
+          "换到 A 车参考系后，B 车的运动怎样描述？",
+        ],
+        script: [
+          "先设置 A 在后、B 在前，观察距离逐渐缩短。",
+          "调节 B 的加速度，让学生判断能否相遇。",
+          "观察 Δx 卡片和 v-t 小图，说明追及本质是相对运动。",
+        ],
+        controls: [
+          segmented("pursuitMode", "实验模式", "chase", [
+            ["追及", "chase"],
+            ["相遇", "meet"],
+          ]),
+          range("vA", "A车初速度 vA", 0, 20, 0.5, 10, "m/s"),
+          range("aA", "A车加速度 aA", -2, 3, 0.1, 0.4, "m/s²"),
+          range("vB", "B车初速度 vB", 0, 20, 0.5, 5, "m/s"),
+          range("aB", "B车加速度 aB", -2, 3, 0.1, 0, "m/s²"),
+          range("gap", "初始间距 Δx₀", 20, 160, 5, 70, "m"),
+        ],
+        stats: (v) => {
+          const xA0 = v.pursuitMode === "meet" ? -v.gap / 2 : -v.gap;
+          const xB0 = v.pursuitMode === "meet" ? v.gap / 2 : 0;
+          const bSign = v.pursuitMode === "meet" ? -1 : 1;
+          const relativeA = 0.5 * (v.aA - bSign * v.aB);
+          const relativeB = v.vA - bSign * v.vB;
+          const relativeC = xA0 - xB0;
+          const hit = solveFirstPositiveQuadratic(relativeA, relativeB, relativeC, 12);
+          return [`Δv₀ = ${(v.vA - bSign * v.vB).toFixed(1)}m/s`, `Δa = ${(v.aA - bSign * v.aB).toFixed(1)}m/s²`, hit !== null ? `t相遇≈${hit.toFixed(1)}s` : "12s内未相遇"];
+        },
+      },
+      {
         id: "acceleration",
         number: "1-4",
         unit: "第一章 运动的描述",
@@ -171,7 +214,7 @@ const chapters = [
         controls: [
           range("v0", "初速度 v₀", 0, 2.5, 0.1, 0.4, "m/s"),
           range("a", "小车加速度 a", 0.2, 3.5, 0.1, 1.4, "m/s²"),
-          range("interval", "打点间隔", 0.04, 0.12, 0.01, 0.08, "s"),
+          range("interval", "打点间隔", 0.02, 0.1, 0.01, 0.02, "s"),
           toggle("showFit", "显示 v-t 拟合", true),
         ],
         stats: (v) => [`T = ${v.interval.toFixed(2)}s`, `a ≈ ${v.a.toFixed(1)}m/s²`, `v₀ = ${v.v0.toFixed(1)}m/s`],
@@ -1445,10 +1488,16 @@ const required3Chapters = [
           range("distance", "板间距 d", 60, 220, 5, 120, "px"),
           range("dielectric", "介电常数 εr", 1, 6, 0.1, 2, ""),
           range("voltage", "电压 U", 1, 12, 0.5, 6, "V"),
+          segmented("capacitorMode", "课堂操作", "connected", [
+            ["接通电源", "connected"],
+            ["断开隔离", "isolated"],
+            ["放电归零", "discharge"],
+          ]),
         ],
         stats: (v) => {
           const c = v.dielectric * v.area / (v.distance / 100);
-          return [`C ∝ ${c.toFixed(2)}`, `Q ∝ ${(c * v.voltage).toFixed(1)}`, `U = ${v.voltage.toFixed(1)}V`];
+          const modeLabel = v.capacitorMode === "isolated" ? "隔离" : v.capacitorMode === "discharge" ? "放电" : "接通";
+          return [`C ∝ ${c.toFixed(2)}`, `Q ∝ ${(c * v.voltage).toFixed(1)}`, modeLabel];
         },
       },
       {
@@ -4153,6 +4202,7 @@ const playbackSims = new Set([
   "frames",
   "displacement",
   "velocity",
+  "pursuitEncounter",
   "acceleration",
   "ticker",
   "vtRelation",
@@ -4179,6 +4229,7 @@ const playbackSims = new Set([
   "kineticTheorem",
   "energyConservation",
   "energyExperiment",
+  "capacitor",
   "electrostaticUse",
   "particleElectricField",
   "sourceCurrent",
@@ -4509,8 +4560,16 @@ function handleCanvasInteraction(event) {
     setRangeValueFromCanvas("push", xr * 80);
     return;
   }
+  if (sim === "pursuitEncounter") {
+    setRangeValueFromCanvas("gap", 20 + xr * 140);
+    return;
+  }
   if (sim === "actionReaction") {
     setRangeValueFromCanvas("force", 20 + xr * 140);
+    return;
+  }
+  if (sim === "capacitor") {
+    setRangeValueFromCanvas("distance", 60 + xr * 160);
     return;
   }
   if (sim === "forceVector" || sim === "equilibrium" || sim === "forceCompositionStudio") {
@@ -4767,6 +4826,24 @@ function wrap(value, max) {
   return ((value % max) + max) % max;
 }
 
+function solveFirstPositiveQuadratic(a, b, c, maxTime = Infinity) {
+  const eps = 1e-6;
+  const candidates = [];
+  if (Math.abs(a) < eps) {
+    if (Math.abs(b) > eps) candidates.push(-c / b);
+  } else {
+    const d = b * b - 4 * a * c;
+    if (d >= 0) {
+      const root = Math.sqrt(d);
+      candidates.push((-b - root) / (2 * a), (-b + root) / (2 * a));
+    }
+  }
+  const first = candidates
+    .filter((time) => time >= 0 && time <= maxTime)
+    .sort((x, y) => x - y)[0];
+  return first === undefined ? null : first;
+}
+
 function lerp(a, b, t) {
   return a + (b - a) * t;
 }
@@ -4932,6 +5009,108 @@ function drawVelocity(v) {
   readout.innerHTML = `当前时刻 t = <strong>${t.toFixed(1)} s</strong>，瞬时速度约 <strong>${currentV.toFixed(1)} m/s</strong>。x-t 图像斜率越大，速度大小越大。`;
 }
 
+function drawPursuitEncounter(v) {
+  clearCanvas();
+  const w = state.width;
+  const h = state.height;
+  const T = 12;
+  const bSign = v.pursuitMode === "meet" ? -1 : 1;
+  const xA0 = v.pursuitMode === "meet" ? -v.gap / 2 : -v.gap;
+  const xB0 = v.pursuitMode === "meet" ? v.gap / 2 : 0;
+  const relativeA = 0.5 * (v.aA - bSign * v.aB);
+  const relativeB = v.vA - bSign * v.vB;
+  const hit = solveFirstPositiveQuadratic(relativeA, relativeB, xA0 - xB0, T);
+  const t = Math.min(state.time, hit ?? T, T);
+  const posA = (time) => xA0 + v.vA * time + 0.5 * v.aA * time * time;
+  const posB = (time) => xB0 + bSign * v.vB * time + 0.5 * bSign * v.aB * time * time;
+  const xA = posA(t);
+  const xB = posB(t);
+  const samples = [];
+  for (let i = 0; i <= 80; i += 1) {
+    const time = (T * i) / 80;
+    samples.push(posA(time), posB(time));
+  }
+  const minX = Math.min(...samples, xA0, xB0, 0) - 18;
+  const maxX = Math.max(...samples, xA0, xB0, 0) + 18;
+  const mapX = (x) => 68 + ((x - minX) / (maxX - minX || 1)) * (w * 0.66 - 92);
+  const topY = h * 0.36;
+  const bottomY = h * 0.62;
+  roundRect(34, topY - 58, w * 0.68, bottomY - topY + 128, 14, "rgba(48,102,190,0.06)", palette.line);
+  label(v.pursuitMode === "meet" ? "相向运动：寻找相遇时刻" : "同向追及：关注相对距离", 54, topY - 36, palette.ink, "left", 17);
+  [topY, bottomY].forEach((y, index) => {
+    ctx.strokeStyle = index === 0 ? "rgba(48,102,190,0.68)" : "rgba(232,93,79,0.68)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(56, y);
+    ctx.lineTo(w * 0.68, y);
+    ctx.stroke();
+    for (let tick = Math.ceil(minX / 20) * 20; tick <= maxX; tick += 20) {
+      const px = mapX(tick);
+      ctx.strokeStyle = "rgba(96,112,128,0.28)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(px, y - 18);
+      ctx.lineTo(px, y + 18);
+      ctx.stroke();
+      if (index === 1) label(`${tick.toFixed(0)}`, px, y + 34, palette.muted, "center", 10);
+    }
+  });
+  const zeroX = mapX(0);
+  ctx.save();
+  ctx.setLineDash([5, 7]);
+  ctx.strokeStyle = "rgba(96,112,128,0.7)";
+  ctx.beginPath();
+  ctx.moveTo(zeroX, topY - 38);
+  ctx.lineTo(zeroX, bottomY + 52);
+  ctx.stroke();
+  ctx.restore();
+  label("参考原点 x=0", zeroX + 8, bottomY + 54, palette.muted, "left", 11);
+  const carAX = mapX(xA);
+  const carBX = mapX(xB);
+  drawCar(carAX, topY - 8, palette.blue, "A");
+  drawCar(carBX, bottomY - 8, palette.coral, "B");
+  arrow(carAX, topY - 64, carAX + clamp((v.vA + v.aA * t) * 8, -110, 110), topY - 64, palette.blue, 2);
+  arrow(carBX, bottomY - 64, carBX + clamp((bSign * v.vB + bSign * v.aB * t) * 8, -110, 110), bottomY - 64, palette.coral, 2);
+  const gapNow = xB - xA;
+  drawBracket(carAX, (topY + bottomY) / 2, carBX, (topY + bottomY) / 2, `Δx=${gapNow.toFixed(1)}m`);
+  roundRect(44, h * 0.08, 200, 86, 10, "rgba(255,255,255,0.92)", hit !== null && Math.abs(t - hit) < 0.03 ? palette.green : palette.line);
+  label(hit !== null && t >= hit ? "已经相遇" : "实时追踪", 64, h * 0.08 + 24, hit !== null && t >= hit ? palette.green : palette.blue, "left", 15);
+  label(`t=${t.toFixed(1)}s`, 64, h * 0.08 + 54, palette.ink, "left", 18);
+  roundRect(264, h * 0.08, 250, 86, 10, "rgba(255,255,255,0.92)", palette.line);
+  label(`xA=${xA.toFixed(1)}m`, 284, h * 0.08 + 28, palette.blue, "left", 14);
+  label(`xB=${xB.toFixed(1)}m`, 284, h * 0.08 + 58, palette.coral, "left", 14);
+
+  const frame = plotFrame(w * 0.73, h * 0.17, w * 0.23, h * 0.46, "v-t 速度图", "t/s", "v");
+  const vSamples = [];
+  for (let i = 0; i <= 80; i += 1) {
+    const time = (T * i) / 80;
+    vSamples.push(v.vA + v.aA * time, bSign * v.vB + bSign * v.aB * time);
+  }
+  const minV = Math.min(...vSamples, 0) - 1;
+  const maxV = Math.max(...vSamples, 0) + 1;
+  const pointFor = (speed, time) => ({
+    x: frame.x0 + (time / T) * frame.w,
+    y: frame.y0 - ((speed - minV) / (maxV - minV || 1)) * frame.h,
+  });
+  const aLine = [];
+  const bLine = [];
+  for (let i = 0; i <= 80; i += 1) {
+    const time = (T * i) / 80;
+    aLine.push(pointFor(v.vA + v.aA * time, time));
+    bLine.push(pointFor(bSign * v.vB + bSign * v.aB * time, time));
+  }
+  plotCurve(frame, aLine, palette.blue, 3);
+  plotCurve(frame, bLine, palette.coral, 3);
+  const markerX = frame.x0 + (t / T) * frame.w;
+  arrow(markerX, frame.y0, markerX, frame.y0 - frame.h, "rgba(96,112,128,0.45)", 1.2);
+  roundRect(w * 0.73, h * 0.69, w * 0.23, 88, 10, "rgba(255,255,255,0.9)", palette.line);
+  label("判定", w * 0.73 + 20, h * 0.69 + 24, palette.ink, "left", 14);
+  label(hit !== null ? `最早相遇 t≈${hit.toFixed(2)}s` : "当前参数下 12s 内未相遇", w * 0.73 + 20, h * 0.69 + 56, hit !== null ? palette.green : palette.coral, "left", 14);
+  readout.innerHTML = hit !== null
+    ? `把追及问题写成 xA = xB，可得最早相遇时间约 <strong>${hit.toFixed(2)} s</strong>。画面中 Δx 逐渐趋近于 0，就是相对运动的核心。`
+    : `当前参数下 12 s 内不会相遇。可以增大 A 车速度或加速度，观察 Δx 是否能减小到 0。`;
+}
+
 function drawAcceleration(v) {
   clearCanvas();
   const w = state.width;
@@ -4971,44 +5150,95 @@ function drawTicker(v) {
   clearCanvas();
   const w = state.width;
   const h = state.height;
+  const count = 46;
+  const totalT = v.interval * (count - 1);
+  const activeT = Math.min(state.time * 0.36, totalT);
+  const activeIndex = Math.max(1, Math.floor(activeT / v.interval));
+  const startX = 84;
+  const benchTop = h * 0.12;
+  const benchLeft = 34;
+  const benchW = w * 0.62;
   const tapeY = h * 0.34;
-  const startX = 58;
-  const count = 15;
-  const scale = Math.min(150, (w - 120) / (v.v0 * v.interval * count + 0.5 * v.a * Math.pow(v.interval * count, 2) + 0.5));
+  const scale = Math.min(230, (benchW - 160) / (v.v0 * totalT + 0.5 * v.a * totalT * totalT + 0.4));
   const dots = [];
   for (let i = 0; i < count; i += 1) {
     const t = i * v.interval;
     dots.push({ t, x: startX + scale * (v.v0 * t + 0.5 * v.a * t * t) });
   }
-  roundRect(34, tapeY - 32, w - 68, 64, 6, "#fff8e4", "#ead28a");
+  roundRect(benchLeft, benchTop, benchW, h * 0.39, 14, "rgba(255,248,228,0.86)", "#ead28a");
+  roundRect(benchLeft + 18, benchTop + 32, 104, 82, 12, "rgba(232,93,79,0.22)", palette.coral);
+  label("打点计时器", benchLeft + 70, benchTop + 58, palette.ink, "center", 14);
+  label(`${Math.round(1 / v.interval)} Hz`, benchLeft + 70, benchTop + 86, palette.coral, "center", 17);
+  roundRect(startX + 16, tapeY - 16, benchW - 190, 32, 16, "#0f172a", "#0f172a");
   dots.forEach((dot, i) => {
-    ctx.fillStyle = i % 5 === 0 ? palette.coral : palette.ink;
+    if (i > activeIndex) return;
+    ctx.fillStyle = i % 5 === 0 ? "#fff7ed" : "rgba(255,247,237,0.75)";
     ctx.beginPath();
-    ctx.arc(dot.x, tapeY, 4, 0, TAU);
+    ctx.arc(dot.x, tapeY, i % 5 === 0 ? 4 : 2.6, 0, TAU);
     ctx.fill();
-    if (i % 3 === 0) label(`${(dot.t).toFixed(2)}s`, dot.x, tapeY + 24, palette.muted, "center", 11);
+    if (i % 5 === 0) label(String(i / 5), dot.x, tapeY + 34, palette.muted, "center", 11);
   });
-  label("打点计时器纸带：相等时间间隔", 44, tapeY - 54, palette.ink);
+  const currentDot = dots[Math.min(activeIndex, dots.length - 1)];
+  const carX = clamp(currentDot.x + 72, benchLeft + 190, benchLeft + benchW - 62);
+  drawCar(carX, tapeY + 56, palette.coral, "小车");
+  arrow(carX - 64, tapeY + 34, currentDot.x + 8, tapeY + 8, palette.muted, 1.4);
+  label("纸带被小车牵引，点距逐渐增大", benchLeft + 22, benchTop + h * 0.31, palette.teal, "left", 15);
+  roundRect(benchLeft + benchW - 164, benchTop + 30, 128, 78, 12, "rgba(255,255,255,0.9)", palette.line);
+  label("状态", benchLeft + benchW - 140, benchTop + 56, palette.muted, "left", 12);
+  label(activeIndex >= count - 1 ? "采样完成" : "正在打点", benchLeft + benchW - 140, benchTop + 86, activeIndex >= count - 1 ? palette.green : palette.coral, "left", 18);
 
-  const frame = plotFrame(48, h * 0.52, w - 96, h * 0.38, "由纸带估算的 v-t 图像", "t/s", "v");
   const speeds = [];
-  for (let i = 1; i < dots.length - 1; i += 1) {
-    const dx = (dots[i + 1].x - dots[i - 1].x) / scale;
-    speeds.push({ t: dots[i].t, v: dx / (2 * v.interval) });
+  for (let i = 5; i < dots.length - 5; i += 5) {
+    const dx = (dots[i + 5].x - dots[i - 5].x) / scale;
+    speeds.push({ t: dots[i].t, v: dx / (10 * v.interval), index: i / 5 });
   }
   const maxSpeed = Math.max(...speeds.map((item) => item.v), 1);
-  const points = speeds.map((item) => ({
-    x: frame.x0 + (item.t / (v.interval * count)) * frame.w,
+
+  function miniFrame(x, y, ww, hh, title, color, mapper) {
+    const frame = plotFrame(x, y, ww, hh, title, "", "");
+    const visible = speeds.filter((item) => item.index * 5 <= activeIndex + 5);
+    if (visible.length) {
+      const points = visible.map((item) => mapper(item, frame));
+      points.forEach((point) => {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 3.6, 0, TAU);
+        ctx.fill();
+      });
+      if (v.showFit && points.length > 1) plotCurve(frame, [points[0], points[points.length - 1]], color, 2.2);
+    }
+    return frame;
+  }
+  const graphX = w * 0.69;
+  const graphY = h * 0.1;
+  const graphW = w * 0.27;
+  const graphH = h * 0.34;
+  miniFrame(graphX, graphY, graphW, graphH, "v-t", palette.coral, (item, frame) => ({
+    x: frame.x0 + (item.t / totalT) * frame.w,
     y: frame.y0 - (item.v / maxSpeed) * frame.h,
   }));
-  points.forEach((point) => {
-    ctx.fillStyle = palette.coral;
-    ctx.beginPath();
-    ctx.arc(point.x, point.y, 4.5, 0, TAU);
-    ctx.fill();
+  miniFrame(graphX, graphY + graphH + 18, graphW, graphH, "s-t²", palette.blue, (item, frame) => {
+    const s = v.v0 * item.t + 0.5 * v.a * item.t * item.t;
+    const maxS = v.v0 * totalT + 0.5 * v.a * totalT * totalT;
+    return {
+      x: frame.x0 + ((item.t * item.t) / (totalT * totalT)) * frame.w,
+      y: frame.y0 - (s / maxS) * frame.h,
+    };
   });
-  if (v.showFit && points.length > 1) plotCurve(frame, [points[0], points[points.length - 1]], palette.teal, 2.5);
-  readout.innerHTML = `纸带点距随时间增大，估算出的速度点近似落在直线上，说明小车做加速度约为 <strong>${v.a.toFixed(1)} m/s²</strong> 的匀变速运动。`;
+
+  const dataTop = h * 0.62;
+  roundRect(34, dataTop, w * 0.62, h * 0.3, 14, "rgba(255,255,255,0.9)", palette.line);
+  label("数据处理：每 5 个点取 1 个计数点", 58, dataTop + 28, palette.ink, "left", 16);
+  speeds.slice(0, 7).forEach((item, index) => {
+    const x = 62 + index * ((w * 0.58) / 7);
+    const active = item.index * 5 <= activeIndex + 5;
+    roundRect(x, dataTop + 54, 68, 82, 8, active ? "rgba(232,93,79,0.08)" : "rgba(96,112,128,0.08)", active ? palette.coral : palette.line);
+    label(`n=${item.index}`, x + 12, dataTop + 78, active ? palette.coral : palette.muted, "left", 12);
+    label(`${item.t.toFixed(2)}s`, x + 12, dataTop + 104, palette.ink, "left", 12);
+    label(`${item.v.toFixed(2)}`, x + 12, dataTop + 128, palette.blue, "left", 13);
+  });
+  label(`v(n)≈Δx/Δt，拟合斜率 a≈${v.a.toFixed(2)}m/s²`, 58, dataTop + 158, palette.teal, "left", 13);
+  readout.innerHTML = `纸带不是只看点距，而是把相等时间内的位移转成速度数据。当前采样到第 <strong>${Math.min(activeIndex, count - 1)}</strong> 个点，v-t 数据会逐步形成直线。`;
 }
 
 function drawVtRelation(v) {
@@ -6659,20 +6889,135 @@ function drawCapacitor(v) {
   clearCanvas();
   const w = state.width;
   const h = state.height;
-  const cx = w * 0.48;
-  const y1 = h * 0.25;
-  const y2 = h * 0.75;
-  const plateH = 95 + v.area * 28;
-  const x1 = cx - v.distance / 2;
-  const x2 = cx + v.distance / 2;
-  roundRect(x1 - 10, h * 0.5 - plateH / 2, 20, plateH, 4, palette.coral, palette.ink);
-  roundRect(x2 - 10, h * 0.5 - plateH / 2, 20, plateH, 4, palette.blue, palette.ink);
-  ctx.fillStyle = `rgba(242,183,5,${0.08 + v.dielectric * 0.045})`;
-  ctx.fillRect(x1 + 10, h * 0.5 - plateH / 2, x2 - x1 - 20, plateH);
-  for (let y = y1; y <= y2; y += 24) arrow(x1 + 24, y, x2 - 24, y, "rgba(48,102,190,0.45)", 1.2);
   const c = v.dielectric * v.area / (v.distance / 100);
-  drawFormulaPanel(["C = Q/U", "C ∝ εS/d", `Q∝CU=${(c * v.voltage).toFixed(1)}`]);
-  readout.innerHTML = `增大面积或介电常数会增大电容，增大板间距会减小电容。当前相对电容 C ∝ <strong>${c.toFixed(2)}</strong>。`;
+  const baseC = 2 * 1.5 / (120 / 100);
+  const tau = clamp(c * 0.58, 0.9, 3.8);
+  const t = Math.max(0, state.time);
+  let voltage = v.voltage;
+  let charge = c * v.voltage;
+  let status = "恒压充电";
+  if (v.capacitorMode === "connected") {
+    const ratio = 1 - Math.exp(-t / tau);
+    charge = c * v.voltage * ratio;
+    voltage = v.voltage * ratio;
+    status = ratio > 0.98 ? "已接近充满" : "接通电源，正在充电";
+  } else if (v.capacitorMode === "isolated") {
+    charge = baseC * v.voltage;
+    voltage = charge / c;
+    status = "断开隔离，Q 保持不变";
+  } else {
+    const ratio = Math.exp(-t / tau);
+    charge = c * v.voltage * ratio;
+    voltage = v.voltage * ratio;
+    status = ratio < 0.04 ? "电荷已基本归零" : "放电中，Q 与 U 同步减小";
+  }
+  const chargeRatio = clamp(charge / (c * v.voltage || 1), 0, 1);
+  const boardX = 36;
+  const boardY = h * 0.11;
+  const boardW = w * 0.64;
+  const boardH = h * 0.56;
+  roundRect(boardX, boardY, boardW, boardH, 16, "rgba(255,248,228,0.82)", "#ead28a");
+  label("电容动态实验台", boardX + 28, boardY + 32, palette.ink, "left", 18);
+  label(status, boardX + 28, boardY + 62, v.capacitorMode === "discharge" ? palette.coral : palette.teal, "left", 13);
+
+  const batteryX = boardX + 64;
+  const batteryY = boardY + boardH * 0.5;
+  roundRect(batteryX - 44, batteryY - 64, 88, 128, 14, "#f8fafc", palette.line);
+  label("直流电源", batteryX, batteryY - 38, palette.ink, "center", 12);
+  label(`${v.voltage.toFixed(1)}V`, batteryX, batteryY + 4, palette.coral, "center", 24);
+  label("+", batteryX + 42, batteryY - 24, palette.ink, "center", 16);
+  label("-", batteryX + 42, batteryY + 54, palette.ink, "center", 16);
+
+  const capCx = boardX + boardW * 0.58;
+  const capCy = boardY + boardH * 0.5;
+  const plateH = clamp(82 + v.area * 34, 96, 190);
+  const x1 = capCx - v.distance / 2;
+  const x2 = capCx + v.distance / 2;
+  const yTop = capCy - plateH / 2;
+  const yBottom = capCy + plateH / 2;
+  const switchX = boardX + boardW * 0.34;
+  const connected = v.capacitorMode === "connected";
+  ctx.strokeStyle = "#8b7866";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(batteryX + 44, batteryY - 24);
+  ctx.lineTo(switchX - 18, batteryY - 24);
+  ctx.moveTo(switchX + 32, batteryY - 24);
+  ctx.lineTo(x1 - 24, batteryY - 24);
+  ctx.lineTo(x1 - 24, capCy - plateH / 2);
+  ctx.moveTo(batteryX + 44, batteryY + 54);
+  ctx.lineTo(x2 + 24, batteryY + 54);
+  ctx.lineTo(x2 + 24, capCy + plateH / 2);
+  ctx.stroke();
+  ctx.strokeStyle = connected ? palette.teal : palette.coral;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(switchX - 18, batteryY - 24);
+  ctx.lineTo(connected ? switchX + 32 : switchX + 18, connected ? batteryY - 24 : batteryY - 44);
+  ctx.stroke();
+  label(connected ? "闭合" : "断开", switchX + 8, batteryY - 58, connected ? palette.teal : palette.coral, "center", 13);
+
+  ctx.fillStyle = `rgba(242,183,5,${0.05 + v.dielectric * 0.055})`;
+  ctx.fillRect(x1 + 10, yTop, x2 - x1 - 20, plateH);
+  roundRect(x1 - 10, yTop, 20, plateH, 5, palette.coral, palette.ink);
+  roundRect(x2 - 10, yTop, 20, plateH, 5, palette.blue, palette.ink);
+  for (let y = yTop + 20; y <= yBottom - 12; y += 22) {
+    arrow(x1 + 26, y, x2 - 26, y, `rgba(48,102,190,${0.18 + chargeRatio * 0.45})`, 1.3);
+  }
+  const chargeCount = Math.max(3, Math.round(5 + chargeRatio * 8));
+  for (let i = 0; i < chargeCount; i += 1) {
+    const yy = yTop + 18 + (i / Math.max(1, chargeCount - 1)) * (plateH - 36);
+    label("+", x1 - 22, yy, palette.coral, "center", 15);
+    label("-", x2 + 22, yy, palette.blue, "center", 15);
+  }
+  drawBracket(x1, yBottom + 30, x2, yBottom + 30, `d=${v.distance.toFixed(0)}px`);
+  label(`S=${v.area.toFixed(1)}  εr=${v.dielectric.toFixed(1)}`, capCx, yTop - 22, palette.muted, "center", 12);
+
+  const frame = plotFrame(w * 0.72, h * 0.14, w * 0.24, h * 0.36, "实时曲线", "t", "");
+  const curveMax = Math.max(v.voltage, charge / Math.max(c, 0.1), 1);
+  const qPts = [];
+  const uPts = [];
+  for (let i = 0; i <= 80; i += 1) {
+    const ti = (Math.min(t, tau * 3.2) * i) / 80;
+    let qi = c * v.voltage;
+    let ui = v.voltage;
+    if (v.capacitorMode === "connected") {
+      const r = 1 - Math.exp(-ti / tau);
+      qi *= r;
+      ui *= r;
+    } else if (v.capacitorMode === "isolated") {
+      qi = baseC * v.voltage;
+      ui = qi / c;
+    } else {
+      const r = Math.exp(-ti / tau);
+      qi *= r;
+      ui *= r;
+    }
+    const x = frame.x0 + (i / 80) * frame.w;
+    qPts.push({ x, y: frame.y0 - clamp(qi / (c * v.voltage || 1), 0, 1.1) * frame.h * 0.86 });
+    uPts.push({ x, y: frame.y0 - clamp(ui / curveMax, 0, 1.1) * frame.h * 0.86 });
+  }
+  plotCurve(frame, qPts, palette.blue, 2.5);
+  plotCurve(frame, uPts, palette.coral, 2.5);
+  label("蓝 Q(t)", frame.x0 + 10, frame.y0 - frame.h - 10, palette.blue, "left", 11);
+  label("红 U(t)", frame.x0 + 78, frame.y0 - frame.h - 10, palette.coral, "left", 11);
+
+  const cardY = h * 0.72;
+  const cards = [
+    ["结构与电容", `C ∝ ${c.toFixed(2)}`, `d=${v.distance.toFixed(0)}px  S=${v.area.toFixed(1)}`],
+    ["电量与电压", `Q ∝ ${charge.toFixed(2)}`, `U=${voltage.toFixed(2)}V`],
+    ["场强与能量", `E ∝ ${(voltage / (v.distance / 100)).toFixed(2)}`, `W ∝ ${(0.5 * c * voltage * voltage).toFixed(2)}`],
+  ];
+  cards.forEach((card, i) => {
+    const x = 38 + i * ((w - 86) / 3);
+    roundRect(x, cardY, (w - 112) / 3, 86, 10, "#111827", "#111827");
+    label(card[0], x + 18, cardY + 22, palette.coral, "left", 12);
+    label(card[1], x + 18, cardY + 48, "#ffffff", "left", 15);
+    label(card[2], x + 18, cardY + 70, "#d1d5db", "left", 12);
+  });
+  readout.innerHTML = v.capacitorMode === "isolated"
+    ? `隔离后电荷量近似保持不变；此时改变板间距或介电常数会改变 C，因此 U = Q/C 会随之变化。当前 C ∝ <strong>${c.toFixed(2)}</strong>。`
+    : `电容器的动态过程可看作 Q 与 U 的渐变：当前 Q 相对量 <strong>${charge.toFixed(2)}</strong>，电压约 <strong>${voltage.toFixed(2)} V</strong>。`;
 }
 
 function drawParticleElectricField(v) {
@@ -9681,6 +10026,9 @@ function drawFrame() {
       break;
     case "velocity":
       drawVelocity(values);
+      break;
+    case "pursuitEncounter":
+      drawPursuitEncounter(values);
       break;
     case "acceleration":
       drawAcceleration(values);
