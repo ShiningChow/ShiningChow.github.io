@@ -4154,6 +4154,7 @@ const playbackSims = new Set([
   "displacement",
   "velocity",
   "acceleration",
+  "ticker",
   "vtRelation",
   "stRelation",
   "freeFall",
@@ -4166,6 +4167,8 @@ const playbackSims = new Set([
   "elevator",
   "curvedMotion",
   "motionComposition",
+  "projectileExperiment",
+  "projectileLaw",
   "circularMotion",
   "centripetalForce",
   "centripetalAccel",
@@ -4178,6 +4181,7 @@ const playbackSims = new Set([
   "energyExperiment",
   "electrostaticUse",
   "particleElectricField",
+  "sourceCurrent",
   "emInduction",
   "emWave",
   "quantization",
@@ -4189,12 +4193,17 @@ const playbackSims = new Set([
   "shmDescription",
   "shmEnergy",
   "pendulum",
+  "pendulumExperiment",
   "forcedResonance",
+  "waveFormationSelective",
+  "waveDescriptionSelective",
+  "waveBoundary",
   "waveInterferenceSelective",
   "dopplerEffect",
   "lorentzForce",
   "chargedParticleMagnetic",
   "acceleratorSpectrometer",
+  "lenzLaw",
   "eddyCurrent",
   "alternatingCurrent",
   "acDescription",
@@ -5817,12 +5826,13 @@ function drawProjectileExperiment(v) {
   clearCanvas();
   const w = state.width;
   const h = state.height;
-  const top = 62;
-  const groundY = h - 70;
-  const left = 70;
+  const top = 76;
+  const left = 80;
   const fallTime = Math.sqrt((2 * v.height) / v.g);
   const rangeValue = v.v0 * fallTime;
-  const scale = Math.min((w - 150) / Math.max(rangeValue, 1), (groundY - top) / v.height);
+  const visualHeight = Math.max(120, Math.min(h - 190, h * 0.38));
+  const scale = Math.min((w - left - 100) / Math.max(rangeValue, 1), visualHeight / v.height);
+  const groundY = top + v.height * scale;
   const s = projectileState(v.v0, 0, v.g, fallTime);
   const x = left + s.x * scale;
   const y = top + (-s.y) * scale;
@@ -5867,15 +5877,16 @@ function drawProjectileLaw(v) {
   clearCanvas();
   const w = state.width;
   const h = state.height;
-  const groundY = h - 62;
-  const left = 62;
+  const groundY = Math.min(h - 96, h * 0.5);
+  const topY = 74;
+  const left = 78;
   const angle = toRad(v.angle);
   const v0x = v.v0 * Math.cos(angle);
   const v0y = v.v0 * Math.sin(angle);
   const flightT = Math.max(0.8, (2 * v0y) / v.g || 3);
   const rangeValue = v0x * flightT;
   const maxH = (v0y * v0y) / (2 * v.g);
-  const scale = Math.min((w - 140) / Math.max(rangeValue, 1), (groundY - 70) / Math.max(maxH, 1));
+  const scale = Math.min((w - left - 110) / Math.max(rangeValue, 1), (groundY - topY) / Math.max(maxH, 1)) * 0.92;
   const s = projectileState(v0x, v0y, v.g, flightT);
   drawGround(groundY);
   ctx.save();
@@ -7435,15 +7446,29 @@ function drawWaveBoundary(v) {
   const w = state.width;
   const h = state.height;
   const mid = h * 0.52;
+  const pulse = (state.time * 0.42) % 1;
   if (v.phenomenon === "reflection") {
-    for (let x = 80; x < w * 0.62; x += v.wavelength) arrow(x, mid - 120, x + 42, mid - 78, palette.blue, 2);
+    for (let x = 70 + pulse * v.wavelength; x < w * 0.62; x += v.wavelength) {
+      arrow(x, mid - 128, x + 46, mid - 82, palette.blue, 2);
+      ctx.strokeStyle = "rgba(48,102,190,0.38)";
+      ctx.beginPath();
+      ctx.arc(x + 28, mid - 104, 24, -0.8, 2.25);
+      ctx.stroke();
+    }
     ctx.strokeStyle = palette.ink;
     ctx.lineWidth = 5;
     ctx.beginPath();
     ctx.moveTo(w * 0.72, 80);
     ctx.lineTo(w * 0.72, h - 80);
     ctx.stroke();
-    arrow(w * 0.65, mid + 80, w * 0.54, mid + 120, palette.coral, 2);
+    for (let x = w * 0.68 - pulse * v.wavelength; x > w * 0.34; x -= v.wavelength) {
+      arrow(x, mid + 78, x - 50, mid + 116, palette.coral, 2);
+      ctx.strokeStyle = "rgba(232,93,79,0.32)";
+      ctx.beginPath();
+      ctx.arc(x - 28, mid + 98, 24, 0.9, 3.7);
+      ctx.stroke();
+    }
+    label("入射波与反射波同时存在", 44, 48, palette.ink);
   } else if (v.phenomenon === "refraction") {
     ctx.fillStyle = "rgba(48,102,190,0.08)";
     ctx.fillRect(w * 0.5, 0, w * 0.5, h);
@@ -7454,6 +7479,21 @@ function drawWaveBoundary(v) {
     ctx.stroke();
     arrow(90, h * 0.28, w * 0.5, mid, palette.blue, 3);
     arrow(w * 0.5, mid, w - 110, mid + (v.speedRatio < 1 ? 90 : -60), palette.coral, 3);
+    for (let i = 0; i < 5; i += 1) {
+      const t = (pulse + i / 5) % 1;
+      const px = lerp(90, w * 0.5, t);
+      const py = lerp(h * 0.28, mid, t);
+      ctx.fillStyle = "rgba(48,102,190,0.55)";
+      ctx.beginPath();
+      ctx.arc(px, py, 6, 0, TAU);
+      ctx.fill();
+      const rx = lerp(w * 0.5, w - 110, t);
+      const ry = lerp(mid, mid + (v.speedRatio < 1 ? 90 : -60), t);
+      ctx.fillStyle = "rgba(232,93,79,0.55)";
+      ctx.beginPath();
+      ctx.arc(rx, ry, 6, 0, TAU);
+      ctx.fill();
+    }
     label("进入新介质：频率不变，波速和波长改变", 44, 48, palette.ink);
   } else {
     ctx.strokeStyle = palette.ink;
@@ -7464,12 +7504,15 @@ function drawWaveBoundary(v) {
     ctx.moveTo(w * 0.48, mid + v.slitWidth / 2);
     ctx.lineTo(w * 0.48, h - 70);
     ctx.stroke();
-    for (let r = 35; r < 230; r += v.wavelength * 0.65) {
+    const spacing = v.wavelength * 0.65;
+    const offset = (state.time * 34) % spacing;
+    for (let r = 30 + offset; r < 250; r += spacing) {
       ctx.strokeStyle = "rgba(48,102,190,0.55)";
       ctx.beginPath();
       ctx.arc(w * 0.48, mid, r, -Math.PI / 2, Math.PI / 2);
       ctx.stroke();
     }
+    arrow(74, mid, w * 0.48 - 28, mid, palette.blue, 2);
     label("狭缝越接近波长，衍射越明显", 44, 48, palette.ink);
   }
   readout.innerHTML = `当前演示：<strong>${v.phenomenon === "reflection" ? "反射" : v.phenomenon === "refraction" ? "折射" : "衍射"}</strong>。`;
@@ -7894,7 +7937,9 @@ function drawLenzLaw(v) {
   const h = state.height;
   const coilX = w * 0.54;
   const coilY = h * 0.5;
-  const magnetX = w * 0.2 + v.distance * w * 0.25;
+  const baseMagnetX = w * 0.2 + v.distance * w * 0.25;
+  const motion = Math.sin(state.time * 0.9 * Math.sign(v.magnetSpeed || 1)) * Math.abs(v.magnetSpeed) * 22;
+  const magnetX = clamp(baseMagnetX + motion, 80, coilX - 92);
   roundRect(magnetX - 42, coilY - 32, 84, 64, 8, "#f8fafc", palette.ink);
   roundRect(magnetX - 42, coilY - 32, 42, 64, 8, palette.coral, null);
   roundRect(magnetX, coilY - 32, 42, 64, 8, palette.blue, null);
