@@ -3816,12 +3816,12 @@ const selective3Chapters = [
 const mechanicsWorkshopChapters = [
   {
     id: "mechanics-theme-lab",
-    title: "力学专题实验库",
+    title: "专题增强素材库",
     sections: [
       {
         id: "force-composition-studio",
         number: "M-1",
-        unit: "力学专题实验库",
+        unit: "专题增强素材库",
         title: "力的合成、分解与平衡专题",
         focus: "把双力合成、正交分解、三力平衡和绳结模型放在同一个专题中切换",
         subtitle: "同一画布中切换四类常用力学模型，帮助教师快速从几何矢量过渡到受力平衡方程。",
@@ -3864,7 +3864,7 @@ const mechanicsWorkshopChapters = [
       {
         id: "momentum-workshop",
         number: "M-2",
-        unit: "力学专题实验库",
+        unit: "专题增强素材库",
         title: "动量守恒模型组",
         focus: "在一维碰撞、二维碰撞、爆炸、火箭、人船、弹簧、动飞摆、凹槽和斜面模型间切换",
         subtitle: "把动量守恒的常见题型做成一个模型组，比较系统内力、外力、质心运动、矢量分解和能量损失。",
@@ -3910,7 +3910,7 @@ const mechanicsWorkshopChapters = [
       {
         id: "incline-workshop",
         number: "M-3",
-        unit: "力学专题实验库",
+        unit: "专题增强素材库",
         title: "斜面运动专题",
         focus: "同一斜面中切换运动实景、受力分析和能量视角",
         subtitle: "把斜面上物块的运动、受力图和能量转化合并到一个专题，避免学生把三种视角割裂。",
@@ -3948,7 +3948,7 @@ const mechanicsWorkshopChapters = [
       {
         id: "energy-workshop",
         number: "M-4",
-        unit: "力学专题实验库",
+        unit: "专题增强素材库",
         title: "机械能守恒与耗散专题",
         focus: "比较过山车、单摆、自由落体和弹簧发射中的能量转化",
         subtitle: "同一套能量条形图配合多种情境，让学生看到守恒与耗散不是公式，而是能量流向。",
@@ -3986,7 +3986,7 @@ const mechanicsWorkshopChapters = [
       {
         id: "newton-cradle",
         number: "M-5",
-        unit: "力学专题实验库",
+        unit: "专题增强素材库",
         title: "牛顿摆专题",
         focus: "用近似弹性碰撞展示动量和机械能共同约束结果",
         subtitle: "调节撞入球数量、初始角度和耗散，观察为什么常见结果是同样数量的小球弹出。",
@@ -4015,7 +4015,7 @@ const mechanicsWorkshopChapters = [
       {
         id: "orbit-workshop",
         number: "M-6",
-        unit: "力学专题实验库",
+        unit: "专题增强素材库",
         title: "万有引力与轨道专题",
         focus: "比较圆轨道、椭圆轨道、逃逸和双星模型",
         subtitle: "调节中心质量、初速度和轨道半径，观察引力提供向心力以及轨道形态变化。",
@@ -4050,14 +4050,30 @@ const mechanicsWorkshopChapters = [
   },
 ];
 
+function getWorkshopSection(sectionId, unit, number = "专题") {
+  const section = mechanicsWorkshopChapters[0].sections.find((item) => item.id === sectionId);
+  return {
+    ...section,
+    unit,
+    number,
+    focus: `专题增强：${section.focus}`,
+  };
+}
+
+function appendWorkshopSection(chapterList, chapterId, sectionId, number = "专题") {
+  const chapter = chapterList.find((item) => item.id === chapterId);
+  if (!chapter) return;
+  chapter.sections.push(getWorkshopSection(sectionId, chapter.title, number));
+}
+
+appendWorkshopSection(chapters, "interaction-force", "force-composition-studio", "3-Z1");
+appendWorkshopSection(chapters, "force-motion", "incline-workshop", "4-Z1");
+appendWorkshopSection(required2Chapters, "gravitation-spaceflight", "orbit-workshop", "7-Z1");
+appendWorkshopSection(required2Chapters, "mechanical-energy", "energy-workshop", "8-Z1");
+appendWorkshopSection(selective1Chapters, "momentum-conservation", "momentum-workshop", "1-Z1");
+appendWorkshopSection(selective1Chapters, "momentum-conservation", "newton-cradle", "1-Z2");
+
 const books = [
-  {
-    id: "mechanicsLab",
-    title: "力学专题实验库",
-    shortTitle: "力学专题",
-    meta: "1 个专题章",
-    chapters: mechanicsWorkshopChapters,
-  },
   {
     id: "required1",
     title: "必修第一册",
@@ -4116,6 +4132,7 @@ const metaPills = document.querySelectorAll(".chapter-meta span");
 const lessonUnit = document.querySelector("#lessonUnit");
 const lessonTitle = document.querySelector("#lessonTitle");
 const lessonSubtitle = document.querySelector("#lessonSubtitle");
+const topicRail = document.querySelector("#topicRail");
 const stageCaption = document.querySelector("#stageCaption");
 const quickStats = document.querySelector("#quickStats");
 const controlGroups = document.querySelector("#controlGroups");
@@ -4123,7 +4140,9 @@ const readout = document.querySelector("#readout");
 const questionList = document.querySelector("#questionList");
 const formulaBox = document.querySelector("#formulaBox");
 const scriptList = document.querySelector("#scriptList");
+const startDemo = document.querySelector("#startDemo");
 const playToggle = document.querySelector("#playToggle");
+const endDemo = document.querySelector("#endDemo");
 const resetTime = document.querySelector("#resetTime");
 const speedRange = document.querySelector("#speedRange");
 
@@ -4230,36 +4249,36 @@ function renderLessonMeta() {
   questionList.innerHTML = module.questions.map((question) => `<li>${question}</li>`).join("");
   formulaBox.innerHTML = module.formulas.map((formula) => `<div class="formula-line">${formula}</div>`).join("");
   scriptList.innerHTML = module.script.map((step) => `<li>${step}</li>`).join("");
+  renderTopicRail();
   updateQuickStats();
+}
+
+function renderTopicRail() {
+  const activeChapter = getActiveChapter();
+  const module = getActiveModule();
+  topicRail.innerHTML = `
+    <div class="topic-rail-heading">
+      <p class="eyebrow">本章演示主题</p>
+      <strong>${module.title}</strong>
+    </div>
+    <div class="topic-list" role="group" aria-label="本章演示主题">
+      ${activeChapter.sections
+        .map(
+          (section) => `
+            <button class="topic-pill ${section.id === module.id ? "active" : ""}" type="button" data-topic="${section.id}">
+              <span>${section.title}</span>
+            </button>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
 }
 
 function renderControls() {
   const values = getValues();
-  const activeChapter = getActiveChapter();
   const module = getActiveModule();
-  const chapterTopics = activeChapter.sections
-    .map(
-      (section) => `
-        <button
-          class="segment-button ${section.id === module.id ? "active" : ""}"
-          type="button"
-          data-topic="${section.id}"
-        >${section.title}</button>
-      `,
-    )
-    .join("");
-  const topicControl = `
-    <div class="control-item chapter-topic-control">
-      <div class="control-label">
-        <span>本章演示主题</span>
-        <span class="control-output">${module.title}</span>
-      </div>
-      <div class="segmented chapter-topic-grid" role="group" aria-label="本章演示主题">
-        ${chapterTopics}
-      </div>
-    </div>
-  `;
-  controlGroups.innerHTML = topicControl + module
+  controlGroups.innerHTML = module
     .controls.map((control) => {
       if (control.type === "range") {
         return `
@@ -4338,8 +4357,64 @@ function refreshControlOutputs() {
   getActiveModule().controls.forEach((control) => {
     const output = document.querySelector(`[data-output-for="${control.key}"]`);
     if (output) output.textContent = formatValue(control, values);
+    const input = document.querySelector(`[data-control="${control.key}"]`);
+    if (input) input.value = values[control.key];
   });
   updateQuickStats();
+}
+
+function setRangeValueFromCanvas(key, rawValue) {
+  const module = getActiveModule();
+  const control = module.controls.find((item) => item.type === "range" && item.key === key);
+  if (!control) return false;
+  const clamped = clamp(rawValue, control.min, control.max);
+  const stepped = control.min + Math.round((clamped - control.min) / control.step) * control.step;
+  getValues()[key] = Number(stepped.toFixed(4));
+  refreshControlOutputs();
+  drawFrame();
+  return true;
+}
+
+function handleCanvasInteraction(event) {
+  const rect = canvas.getBoundingClientRect();
+  const x = clamp(event.clientX - rect.left, 0, rect.width);
+  const y = clamp(event.clientY - rect.top, 0, rect.height);
+  const xr = rect.width ? x / rect.width : 0.5;
+  const yr = rect.height ? y / rect.height : 0.5;
+  const module = getActiveModule();
+  const sim = module.sim;
+
+  if (sim === "gravityElastic") {
+    setRangeValueFromCanvas("mass", 0.2 + xr * 4.8);
+    return;
+  }
+  if (sim === "friction") {
+    setRangeValueFromCanvas("push", xr * 80);
+    return;
+  }
+  if (sim === "actionReaction") {
+    setRangeValueFromCanvas("force", 20 + xr * 140);
+    return;
+  }
+  if (sim === "forceVector" || sim === "equilibrium" || sim === "forceCompositionStudio") {
+    setRangeValueFromCanvas("angle", 180 - yr * 180);
+    return;
+  }
+  if (sim === "applications" || sim === "inclineWorkshop") {
+    setRangeValueFromCanvas("angle", 5 + (1 - yr) * 55);
+    return;
+  }
+  if (module.controls.some((control) => control.key === "speed" && control.type === "range")) {
+    setRangeValueFromCanvas("speed", xr * 2.2);
+    return;
+  }
+  if (module.controls.some((control) => control.key === "angle" && control.type === "range")) {
+    setRangeValueFromCanvas("angle", 180 - yr * 180);
+    return;
+  }
+  if (module.controls.some((control) => control.key === "mass" && control.type === "range")) {
+    setRangeValueFromCanvas("mass", 0.5 + xr * 7.5);
+  }
 }
 
 function updateQuickStats() {
@@ -9832,6 +9907,20 @@ function tick(now) {
   requestAnimationFrame(tick);
 }
 
+function switchTopic(topicId) {
+  if (!modules.some((module) => module.id === topicId)) return;
+  state.activeId = topicId;
+  state.time = 0;
+  renderNav();
+  renderLessonMeta();
+  renderControls();
+  drawFrame();
+}
+
+function syncPlaybackControls() {
+  playToggle.textContent = state.playing ? "暂停" : "继续";
+}
+
 bookSwitcher.addEventListener("click", (event) => {
   const button = event.target.closest("[data-book]");
   if (!button) return;
@@ -9846,17 +9935,18 @@ bookSwitcher.addEventListener("click", (event) => {
   drawFrame();
 });
 
+topicRail.addEventListener("click", (event) => {
+  const topic = event.target.closest("[data-topic]");
+  if (!topic) return;
+  switchTopic(topic.dataset.topic);
+});
+
 lessonNav.addEventListener("click", (event) => {
   const button = event.target.closest("[data-chapter]");
   if (!button) return;
   const chapter = activeBook.chapters.find((item) => item.id === button.dataset.chapter);
   if (!chapter) return;
-  state.activeId = chapter.sections[0].id;
-  state.time = 0;
-  renderNav();
-  renderLessonMeta();
-  renderControls();
-  drawFrame();
+  switchTopic(chapter.sections[0].id);
 });
 
 controlGroups.addEventListener("input", (event) => {
@@ -9868,17 +9958,6 @@ controlGroups.addEventListener("input", (event) => {
 });
 
 controlGroups.addEventListener("click", (event) => {
-  const topic = event.target.closest("[data-topic]");
-  if (topic) {
-    state.activeId = topic.dataset.topic;
-    state.time = 0;
-    renderNav();
-    renderLessonMeta();
-    renderControls();
-    drawFrame();
-    return;
-  }
-
   const segment = event.target.closest("[data-segment]");
   if (!segment) return;
   getValues()[segment.dataset.segment] = segment.dataset.value;
@@ -9894,9 +9973,34 @@ controlGroups.addEventListener("change", (event) => {
   refreshControlOutputs();
 });
 
+canvas.addEventListener("pointerdown", (event) => {
+  canvas.setPointerCapture?.(event.pointerId);
+  handleCanvasInteraction(event);
+});
+
+canvas.addEventListener("pointermove", (event) => {
+  if (event.buttons !== 1) return;
+  handleCanvasInteraction(event);
+});
+
+startDemo.addEventListener("click", () => {
+  state.time = 0;
+  state.playing = true;
+  state.lastFrame = performance.now();
+  syncPlaybackControls();
+  drawFrame();
+});
+
 playToggle.addEventListener("click", () => {
   state.playing = !state.playing;
-  playToggle.textContent = state.playing ? "暂停" : "播放";
+  syncPlaybackControls();
+});
+
+endDemo.addEventListener("click", () => {
+  state.playing = false;
+  state.time = 0;
+  syncPlaybackControls();
+  drawFrame();
 });
 
 resetTime.addEventListener("click", () => {
@@ -9919,4 +10023,5 @@ renderNav();
 renderLessonMeta();
 renderControls();
 setCanvasSize();
+syncPlaybackControls();
 requestAnimationFrame(tick);

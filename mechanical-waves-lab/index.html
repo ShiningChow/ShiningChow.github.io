@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>高中物理动态演示台 | 教材全六册 + 力学专题实验库</title>
-    <link rel="stylesheet" href="./styles.css?v=20260615-red-flat" />
+    <title>高中物理动态演示台 | 教材全六册 + 章节专题演示</title>
+    <link rel="stylesheet" href="./styles.css?v=20260615-topic-rail" />
   </head>
   <body>
     <div class="app-shell">
@@ -20,7 +20,7 @@
         <div class="chapter-meta">
           <span>人教版 2019</span>
           <span>课堂投屏</span>
-          <span>27 章 + 专题库</span>
+          <span>27 章 + 专题演示</span>
         </div>
 
         <nav id="lessonNav" class="lesson-nav"></nav>
@@ -28,7 +28,7 @@
         <div class="roadmap">
           <p class="eyebrow">产品蓝图</p>
           <p>
-            当前版本只按“教材册 + 章标题”组织目录，不再绑定某个版本教材的具体小节名称；章内用多个演示主题承载核心概念，并新增力学专题实验库，便于适配不同教材版本。
+            当前版本只按“教材册 + 章标题”组织目录，不再绑定某个版本教材的具体小节名称；章内用多个演示主题承载核心概念，专题内容已并入对应章节，便于适配不同教材版本。
           </p>
         </div>
       </aside>
@@ -42,7 +42,9 @@
           </div>
 
           <div class="play-controls" aria-label="播放控制">
+            <button id="startDemo" class="primary-button" type="button">开始</button>
             <button id="playToggle" class="primary-button" type="button">暂停</button>
+            <button id="endDemo" class="ghost-button" type="button">结束</button>
             <button id="resetTime" class="ghost-button" type="button">重置</button>
             <label class="speed-control">
               <span>演示速度</span>
@@ -50,6 +52,8 @@
             </label>
           </div>
         </header>
+
+        <section id="topicRail" class="topic-rail" aria-label="本章演示主题"></section>
 
         <section class="stage-grid">
           <section class="stage-panel" aria-label="动态演示画布">
@@ -90,6 +94,6 @@
       </main>
     </div>
 
-    <script src="./app-required1.js?v=20260615-mechanics-lab"></script>
+    <script src="./app-required1.js?v=20260615-integrated-topics"></script>
   </body>
 </html>

@@ -193,7 +193,7 @@ button {
 }
 
 .lesson-button.active .lesson-index {
-  color: #ffffff;
+  color: var(--teal);
   background: #f1f5f9;
 }
 
@@ -259,6 +259,57 @@ button {
   gap: 10px;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.topic-rail {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.topic-rail-heading strong {
+  display: block;
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.topic-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(138px, 1fr));
+  gap: 8px;
+}
+
+.topic-pill {
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: #334251;
+  background: #f8fafc;
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.topic-pill:hover {
+  border-color: var(--red-line);
+  color: #9f1b14;
+  background: var(--red-soft);
+}
+
+.topic-pill.active {
+  border-color: var(--teal);
+  color: #ffffff;
+  background: var(--teal);
 }
 
 .primary-button,
@@ -359,6 +410,8 @@ button {
   height: 100%;
   min-height: 360px;
   background: #ffffff;
+  cursor: crosshair;
+  touch-action: none;
 }
 
 .readout {
@@ -565,6 +618,10 @@ input[type="range"]:disabled {
 
   .play-controls {
     justify-content: flex-start;
+  }
+
+  .topic-rail {
+    grid-template-columns: 1fr;
   }
 
   .speed-control {
