@@ -4123,10 +4123,14 @@ let activeBook = books.find((book) => book.id === activeBookId);
 let modules = activeBook.chapters.flatMap((chapter) =>
   chapter.sections.map((section) => ({ ...section, chapterTitle: chapter.title, bookId: activeBook.id })),
 );
+let chapterQuery = "";
 
 const canvas = document.querySelector("#waveCanvas");
 const ctx = canvas.getContext("2d");
 const lessonNav = document.querySelector("#lessonNav");
+const bookSwitcherMount = document.querySelector("#bookSwitcherMount");
+const chapterSearch = document.querySelector("#chapterSearch");
+const bookJumpButtons = document.querySelectorAll("[data-book-jump]");
 const brandTitle = document.querySelector(".brand-block h1");
 const metaPills = document.querySelectorAll(".chapter-meta span");
 const lessonUnit = document.querySelector("#lessonUnit");
@@ -4250,7 +4254,11 @@ const bookSwitcher = document.createElement("div");
 bookSwitcher.className = "segmented book-switcher";
 bookSwitcher.setAttribute("role", "group");
 bookSwitcher.setAttribute("aria-label", "教材册选择");
-lessonNav.before(bookSwitcher);
+if (bookSwitcherMount) {
+  bookSwitcherMount.append(bookSwitcher);
+} else {
+  lessonNav.before(bookSwitcher);
+}
 
 function refreshBookModules() {
   activeBook = books.find((book) => book.id === activeBookId) || books[0];
@@ -4272,6 +4280,15 @@ function renderBookSwitcher() {
       `,
     )
     .join("");
+  syncBookCards();
+}
+
+function syncBookCards() {
+  bookJumpButtons.forEach((button) => {
+    const active = button.dataset.bookJump === activeBookId;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+  });
 }
 
 function getActiveModule() {
@@ -4298,9 +4315,22 @@ function isPlaybackRelevant(module = getActiveModule(), values = getValues()) {
 
 function renderNav() {
   brandTitle.textContent = activeBook.title;
+  if (metaPills[0]) metaPills[0].textContent = "人教版 2019";
+  if (metaPills[1]) metaPills[1].textContent = `${modules.length} 个演示`;
   if (metaPills[2]) metaPills[2].textContent = `${activeBook.chapters.length} 章`;
   const activeChapter = getActiveChapter();
-  lessonNav.innerHTML = activeBook.chapters
+  const normalizedQuery = chapterQuery.trim().toLowerCase();
+  const visibleChapters = normalizedQuery
+    ? activeBook.chapters.filter((chapter) => {
+        const haystack = `${chapter.title} ${chapter.sections.map((section) => `${section.title} ${section.subtitle}`).join(" ")}`.toLowerCase();
+        return haystack.includes(normalizedQuery);
+      })
+    : activeBook.chapters;
+  if (!visibleChapters.length) {
+    lessonNav.innerHTML = `<div class="lesson-empty">没有找到匹配的章节或演示主题。可以换一个关键词试试。</div>`;
+    return;
+  }
+  lessonNav.innerHTML = visibleChapters
     .map(
       (chapter) => `
         <button class="lesson-button ${chapter.id === activeChapter.id ? "active" : ""}" type="button" data-chapter="${chapter.id}">
@@ -10004,10 +10034,11 @@ function syncPlaybackControls() {
   if (!enabled) state.time = 0;
 }
 
-bookSwitcher.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-book]");
-  if (!button) return;
-  activeBookId = button.dataset.book;
+function activateBook(bookId, shouldScroll = false) {
+  if (!books.some((book) => book.id === bookId)) return;
+  activeBookId = bookId;
+  chapterQuery = "";
+  if (chapterSearch) chapterSearch.value = "";
   refreshBookModules();
   state.activeId = modules[0].id;
   state.time = 0;
@@ -10016,6 +10047,26 @@ bookSwitcher.addEventListener("click", (event) => {
   renderLessonMeta();
   renderControls();
   drawFrame();
+  if (shouldScroll) {
+    document.querySelector("#lab")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+bookSwitcher.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-book]");
+  if (!button) return;
+  activateBook(button.dataset.book);
+});
+
+bookJumpButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    activateBook(button.dataset.bookJump, true);
+  });
+});
+
+chapterSearch?.addEventListener("input", () => {
+  chapterQuery = chapterSearch.value;
+  renderNav();
 });
 
 topicRail.addEventListener("click", (event) => {

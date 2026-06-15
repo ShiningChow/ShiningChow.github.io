@@ -3,94 +3,219 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>高中物理动态演示台 | 教材全六册 + 章节专题演示</title>
-    <link rel="stylesheet" href="./styles.css?v=20260615-physics-qa" />
+    <title>物理演示实验室 | 高中物理在线交互演示平台</title>
+    <link rel="stylesheet" href="./styles.css?v=20260615-modern-redesign" />
   </head>
   <body>
-    <div class="app-shell">
-      <aside class="sidebar" aria-label="课程导航">
-        <div class="brand-block">
-          <div class="brand-mark">PHY</div>
-          <div>
-            <p class="eyebrow">高中物理动态演示台</p>
-            <h1>必修第一册</h1>
-          </div>
-        </div>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a class="site-brand" href="#intro" aria-label="返回首页">
+          <span class="brand-mark">物</span>
+          <span>
+            <strong>物理演示实验室</strong>
+            <small>高中物理在线交互演示平台</small>
+          </span>
+        </a>
+        <nav class="site-nav" aria-label="页面导航">
+          <a href="#books">教材入口</a>
+          <a href="#lab">实验工作台</a>
+          <a href="#teacher-board">教师提示</a>
+        </nav>
+        <span class="version-chip">教师版 v1.1</span>
+      </div>
+    </header>
 
-        <div class="chapter-meta">
-          <span>人教版 2019</span>
-          <span>课堂投屏</span>
-          <span>27 章 + 专题演示</span>
-        </div>
-
-        <nav id="lessonNav" class="lesson-nav"></nav>
-
-        <div class="roadmap">
-          <p class="eyebrow">产品蓝图</p>
+    <main>
+      <section id="intro" class="hero-section">
+        <div class="hero-copy">
+          <p class="eyebrow">课堂投屏 · 即开即演示</p>
+          <h1>让物理课堂<span>活起来</span></h1>
           <p>
-            当前版本只按“教材册 + 章标题”组织目录，不再绑定某个版本教材的具体小节名称；章内用多个演示主题承载核心概念，专题内容已并入对应章节，便于适配不同教材版本。
+            按教材册和章节组织高中物理核心概念，用可拖拽、可调参、可重播的动态演示帮助教师把抽象规律讲清楚。
           </p>
+          <div class="hero-actions">
+            <a class="primary-button" href="#books">选择教材</a>
+            <a class="ghost-button" href="#lab">进入工作台</a>
+          </div>
         </div>
-      </aside>
 
-      <main class="workspace">
-        <header class="topbar">
-          <div>
-            <p id="lessonUnit" class="eyebrow"></p>
-            <h2 id="lessonTitle"></h2>
-            <p id="lessonSubtitle" class="subtitle"></p>
+        <div class="hero-preview" aria-hidden="true">
+          <div class="preview-toolbar">
+            <span></span>
+            <span></span>
+            <span></span>
           </div>
-
-          <div class="play-controls" aria-label="播放控制">
-            <button id="restartDemo" class="primary-button" type="button">重来一次</button>
-            <label class="speed-control">
-              <span>演示速度</span>
-              <input id="speedRange" type="range" min="0.25" max="2.2" value="1" step="0.05" />
-            </label>
+          <div class="preview-stage">
+            <div class="preview-grid"></div>
+            <div class="preview-block"></div>
+            <div class="preview-arrow preview-arrow-force"></div>
+            <div class="preview-arrow preview-arrow-normal"></div>
+            <div class="preview-wave"></div>
           </div>
-        </header>
+          <div class="preview-panel">
+            <span>质量 m</span>
+            <strong>4.70 kg</strong>
+            <div></div>
+          </div>
+        </div>
+      </section>
 
-        <section id="topicRail" class="topic-rail" aria-label="本章演示主题"></section>
+      <section id="books" class="book-section" aria-labelledby="booksTitle">
+        <div class="section-heading">
+          <p class="eyebrow">教材入口</p>
+          <h2 id="booksTitle">按教材册进入，按章节组织演示</h2>
+          <p>不再绑定某个版本教材的小节标题，章内保留多个演示主题，方便适配不同教材与课堂节奏。</p>
+        </div>
 
-        <section class="stage-grid">
-          <section class="stage-panel" aria-label="动态演示画布">
-            <div class="stage-toolbar">
-              <div>
-                <p class="eyebrow">实时演示</p>
-                <strong id="stageCaption"></strong>
-              </div>
-              <div id="quickStats" class="quick-stats"></div>
+        <div class="book-grid">
+          <button class="book-card" type="button" data-book-jump="required1">
+            <span class="book-stripe book-stripe-red"></span>
+            <span class="book-symbol">M1</span>
+            <span class="book-title">必修一</span>
+            <span class="book-subtitle">力学基础</span>
+            <span class="book-desc">运动的描述、匀变速直线运动、相互作用、牛顿运动定律</span>
+            <span class="book-footer"><strong>4 章</strong><em>开始学习</em></span>
+          </button>
+
+          <button class="book-card" type="button" data-book-jump="required2">
+            <span class="book-stripe book-stripe-green"></span>
+            <span class="book-symbol">M2</span>
+            <span class="book-title">必修二</span>
+            <span class="book-subtitle">力学进阶</span>
+            <span class="book-desc">曲线运动、万有引力与宇宙航行、机械能守恒定律</span>
+            <span class="book-footer"><strong>4 章</strong><em>开始学习</em></span>
+          </button>
+
+          <button class="book-card" type="button" data-book-jump="required3">
+            <span class="book-stripe book-stripe-blue"></span>
+            <span class="book-symbol">E1</span>
+            <span class="book-title">必修三</span>
+            <span class="book-subtitle">电磁学基础</span>
+            <span class="book-desc">静电场、电路及其应用、电能与能量守恒、电磁基础</span>
+            <span class="book-footer"><strong>5 章</strong><em>开始学习</em></span>
+          </button>
+
+          <button class="book-card" type="button" data-book-jump="selective1">
+            <span class="book-stripe book-stripe-orange"></span>
+            <span class="book-symbol">W</span>
+            <span class="book-title">选必一</span>
+            <span class="book-subtitle">波动与动量</span>
+            <span class="book-desc">动量守恒、机械振动、机械波、光的性质</span>
+            <span class="book-footer"><strong>4 章</strong><em>开始学习</em></span>
+          </button>
+
+          <button class="book-card" type="button" data-book-jump="selective2">
+            <span class="book-stripe book-stripe-purple"></span>
+            <span class="book-symbol">E2</span>
+            <span class="book-title">选必二</span>
+            <span class="book-subtitle">电磁学进阶</span>
+            <span class="book-desc">安培力与洛伦兹力、电磁感应、交流电、传感器</span>
+            <span class="book-footer"><strong>5 章</strong><em>开始学习</em></span>
+          </button>
+
+          <button class="book-card" type="button" data-book-jump="selective3">
+            <span class="book-stripe book-stripe-cyan"></span>
+            <span class="book-symbol">Q</span>
+            <span class="book-title">选必三</span>
+            <span class="book-subtitle">热学与近代物理</span>
+            <span class="book-desc">分子动理论、热力学定律、原子物理、核物理与粒子</span>
+            <span class="book-footer"><strong>5 章</strong><em>开始学习</em></span>
+          </button>
+        </div>
+      </section>
+
+      <section id="lab" class="app-shell" aria-label="实验工作台">
+        <aside class="sidebar" aria-label="课程导航">
+          <div class="brand-block">
+            <div class="brand-mark">物</div>
+            <div>
+              <p class="eyebrow">当前教材</p>
+              <h1>必修第一册</h1>
             </div>
-            <canvas id="waveCanvas"></canvas>
-            <div id="readout" class="readout" aria-live="polite"></div>
+          </div>
+
+          <div class="chapter-meta">
+            <span>人教版 2019</span>
+            <span>课堂投屏</span>
+            <span>27 章</span>
+          </div>
+
+          <div id="bookSwitcherMount" class="book-switcher-mount"></div>
+
+          <label class="chapter-search" for="chapterSearch">
+            <span>搜索章节</span>
+            <input id="chapterSearch" type="search" placeholder="输入章标题或演示主题" />
+          </label>
+
+          <nav id="lessonNav" class="lesson-nav"></nav>
+
+          <div class="roadmap">
+            <p class="eyebrow">使用提示</p>
+            <p>
+              先选教材册，再点章节。每章上方会展示多个演示主题；可直接拖动画布或调整右侧参数，循环型动画提供“重来一次”。
+            </p>
+          </div>
+        </aside>
+
+        <main class="workspace">
+          <header class="topbar">
+            <div>
+              <p id="lessonUnit" class="eyebrow"></p>
+              <h2 id="lessonTitle"></h2>
+              <p id="lessonSubtitle" class="subtitle"></p>
+            </div>
+
+            <div class="play-controls" aria-label="播放控制">
+              <button id="restartDemo" class="primary-button" type="button">重来一次</button>
+              <label class="speed-control">
+                <span>演示速度</span>
+                <input id="speedRange" type="range" min="0.25" max="2.2" value="1" step="0.05" />
+              </label>
+            </div>
+          </header>
+
+          <section id="topicRail" class="topic-rail" aria-label="本章演示主题"></section>
+
+          <section class="stage-grid">
+            <section class="stage-panel" aria-label="动态演示画布">
+              <div class="stage-toolbar">
+                <div>
+                  <p class="eyebrow">实时演示</p>
+                  <strong id="stageCaption"></strong>
+                </div>
+                <div id="quickStats" class="quick-stats"></div>
+              </div>
+              <canvas id="waveCanvas"></canvas>
+              <div id="readout" class="readout" aria-live="polite"></div>
+            </section>
+
+            <aside class="control-panel" aria-label="演示参数">
+              <div class="panel-heading">
+                <p class="eyebrow">参数面板</p>
+                <h3>课堂可调变量</h3>
+              </div>
+              <div id="controlGroups" class="control-groups"></div>
+            </aside>
           </section>
 
-          <aside class="control-panel" aria-label="演示参数">
-            <div class="panel-heading">
-              <p class="eyebrow">参数面板</p>
-              <h3>课堂可调变量</h3>
-            </div>
-            <div id="controlGroups" class="control-groups"></div>
-          </aside>
-        </section>
+          <section id="teacher-board" class="teacher-board" aria-label="教师提示">
+            <article>
+              <p class="eyebrow">课堂追问</p>
+              <ul id="questionList"></ul>
+            </article>
+            <article>
+              <p class="eyebrow">板书公式</p>
+              <div id="formulaBox" class="formula-box"></div>
+            </article>
+            <article>
+              <p class="eyebrow">演示脚本</p>
+              <ol id="scriptList"></ol>
+            </article>
+          </section>
+        </main>
+      </section>
+    </main>
 
-        <section class="teacher-board" aria-label="教师提示">
-          <article>
-            <p class="eyebrow">课堂追问</p>
-            <ul id="questionList"></ul>
-          </article>
-          <article>
-            <p class="eyebrow">板书公式</p>
-            <div id="formulaBox" class="formula-box"></div>
-          </article>
-          <article>
-            <p class="eyebrow">演示脚本</p>
-            <ol id="scriptList"></ol>
-          </article>
-        </section>
-      </main>
-    </div>
-
-    <script src="./app-required1.js?v=20260615-physics-qa"></script>
+    <script src="./app-required1.js?v=20260615-modern-redesign"></script>
   </body>
 </html>
