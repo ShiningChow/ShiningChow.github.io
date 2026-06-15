@@ -261,6 +261,11 @@ button {
   justify-content: flex-end;
 }
 
+.play-controls[hidden],
+.speed-control[hidden] {
+  display: none;
+}
+
 .topic-rail {
   display: grid;
   grid-template-columns: 190px minmax(0, 1fr);

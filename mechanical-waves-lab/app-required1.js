@@ -70,7 +70,7 @@ const chapters = [
         script: [
           "拖动起点和终点，比较直线位移与曲线路程。",
           "增大路径弯曲程度，让学生估计路程如何变化。",
-          "暂停在任意时刻，区分“时刻”和“经历的时间”。",
+          "点重来一次后观察不同瞬间，区分“时刻”和“经历的时间”。",
         ],
         controls: [
           range("startX", "起点位置 x₁", -5, 3, 0.5, -3, "m"),
@@ -1150,7 +1150,7 @@ const required2Chapters = [
         script: [
           "关闭阻力，观察总机械能柱保持不变。",
           "打开阻力，观察机械能逐渐减少。",
-          "暂停在不同高度，比较 Ek 和 Ep 的互相转化。",
+          "点重来一次后观察不同高度，比较 Ek 和 Ep 的互相转化。",
         ],
         controls: [
           range("height", "初始高度 h", 2, 20, 0.5, 10, "m"),
@@ -2249,7 +2249,7 @@ const selective1Chapters = [
         sim: "waveDescriptionSelective",
         formulas: ["v = λf", "波的图像：固定 t 看 y-x", "振动图像：固定 x 看 y-t"],
         questions: ["从哪张图读波长？从哪张图读周期？", "只看波形图能否判断传播方向？", "同相点之间距离是什么？"],
-        script: ["移动探针，观察 y-t 图像相位。", "调节频率和波长，验证 v=λf。", "暂停画面，比较两种图像含义。"],
+        script: ["移动探针，观察 y-t 图像相位。", "调节频率和波长，验证 v=λf。", "在不同瞬间比较两种图像含义。"],
         controls: [
           range("probe", "探针位置", 0.1, 0.9, 0.02, 0.42, "L"),
           range("frequency", "频率 f", 0.3, 2.5, 0.05, 0.8, "Hz"),
@@ -4140,11 +4140,78 @@ const readout = document.querySelector("#readout");
 const questionList = document.querySelector("#questionList");
 const formulaBox = document.querySelector("#formulaBox");
 const scriptList = document.querySelector("#scriptList");
-const startDemo = document.querySelector("#startDemo");
-const playToggle = document.querySelector("#playToggle");
-const endDemo = document.querySelector("#endDemo");
-const resetTime = document.querySelector("#resetTime");
+const restartDemo = document.querySelector("#restartDemo");
 const speedRange = document.querySelector("#speedRange");
+const playControls = document.querySelector(".play-controls");
+const speedControl = document.querySelector(".speed-control");
+
+const playbackSims = new Set([
+  "frames",
+  "displacement",
+  "velocity",
+  "acceleration",
+  "vtRelation",
+  "stRelation",
+  "freeFall",
+  "friction",
+  "actionReaction",
+  "inertia",
+  "fmaExperiment",
+  "newtonSecond",
+  "applications",
+  "elevator",
+  "curvedMotion",
+  "motionComposition",
+  "circularMotion",
+  "centripetalForce",
+  "centripetalAccel",
+  "lifeCircular",
+  "planetLaws",
+  "gravityAchievements",
+  "workPower",
+  "kineticTheorem",
+  "energyConservation",
+  "energyExperiment",
+  "electrostaticUse",
+  "particleElectricField",
+  "emInduction",
+  "emWave",
+  "quantization",
+  "momentumBasic",
+  "momentumConservation",
+  "collisionTypes",
+  "recoilRocket",
+  "simpleHarmonic",
+  "shmDescription",
+  "shmEnergy",
+  "pendulum",
+  "forcedResonance",
+  "waveInterferenceSelective",
+  "dopplerEffect",
+  "lorentzForce",
+  "chargedParticleMagnetic",
+  "acceleratorSpectrometer",
+  "eddyCurrent",
+  "alternatingCurrent",
+  "acDescription",
+  "powerTransmission",
+  "lcOscillation",
+  "emFieldWave",
+  "radioTransmitReceive",
+  "sensorControl",
+  "molecularTheory",
+  "isothermalGas",
+  "liquidSurface",
+  "photoelectricEffectS3",
+  "hydrogenBohr",
+  "matterWave",
+  "elementaryParticles",
+  "momentumWorkshop",
+  "inclineWorkshop",
+  "energyWorkshop",
+  "newtonCradle",
+  "orbitWorkshop",
+]);
 
 const valuesByModule = Object.fromEntries(
   books.flatMap((book) =>
@@ -4159,7 +4226,7 @@ const valuesByModule = Object.fromEntries(
 
 const state = {
   activeId: modules[0].id,
-  playing: true,
+  playing: false,
   time: 0,
   lastFrame: performance.now(),
   speed: Number(speedRange.value),
@@ -4218,6 +4285,15 @@ function getActiveChapter() {
 
 function getValues() {
   return valuesByModule[state.activeId];
+}
+
+function isPlaybackRelevant(module = getActiveModule(), values = getValues()) {
+  if (!module) return false;
+  if (module.sim === "friction") {
+    const fMax = values.muStatic * values.normal;
+    return values.frictionScene === "horizontal" && values.push > fMax;
+  }
+  return playbackSims.has(module.sim);
 }
 
 function renderNav() {
@@ -4340,6 +4416,7 @@ function renderControls() {
       return "";
     })
     .join("");
+  syncPlaybackControls();
 }
 
 function formatValue(control, values = getValues()) {
@@ -4361,6 +4438,7 @@ function refreshControlOutputs() {
     if (input) input.value = values[control.key];
   });
   updateQuickStats();
+  syncPlaybackControls();
 }
 
 function setRangeValueFromCanvas(key, rawValue) {
@@ -5045,14 +5123,14 @@ function drawGravityElastic(v) {
     const y = h * 0.52;
     const wallX = 80;
     const extension = (v.mass * v.g) / v.k;
-    const blockX = wallX + 185 + extension * 80 + Math.sin(state.time * 2.2) * 8;
+    const blockX = wallX + 185 + extension * 80;
     ctx.strokeStyle = palette.ink;
     ctx.lineWidth = 5;
     ctx.beginPath();
     ctx.moveTo(wallX, y - 95);
     ctx.lineTo(wallX, y + 68);
     ctx.stroke();
-    drawSpring(wallX + 22, y, blockX - 46, 8, 14);
+    drawHorizontalSpring(wallX + 22, y, blockX - 46, 8, 14);
     drawGround(y + 46);
     drawBlock(blockX, y + 46, 86, 50, palette.amber);
     const c = blockCenter(blockX, y + 46, 50);
@@ -5095,7 +5173,7 @@ function drawGravityElastic(v) {
   const extension = (v.mass * v.g) / v.k;
   const scale = 90;
   const restLength = 105;
-  const dynamic = Math.sin(state.time * 2.2) * 6;
+  const dynamic = 0;
   const blockY = topY + restLength + extension * scale + dynamic;
   ctx.strokeStyle = palette.ink;
   ctx.lineWidth = 5;
@@ -5164,7 +5242,7 @@ function drawFriction(v) {
   if (v.frictionScene === "stack") {
     const groundY = h * 0.64;
     const x = w * 0.42;
-    drawGround(groundY + 24);
+    drawGround(groundY);
     drawBlock(x, groundY, 130, 46, palette.teal);
     drawBlock(x - 10, groundY - 46, 78, 40, palette.amber);
     const lowerC = blockCenter(x, groundY, 46);
@@ -5184,8 +5262,8 @@ function drawFriction(v) {
   const kinetic = v.muKinetic * v.normal;
   const moving = v.push > fMax;
   const friction = moving ? kinetic : v.push;
-  const x = moving ? 160 + wrap((v.push - kinetic) * state.time * 2.5, w - 300) : w * 0.45;
-  drawGround(groundY + 22);
+  const x = moving ? 160 + clamp((v.push - kinetic) * state.time * 2.5, 0, w - 300) : w * 0.45;
+  drawGround(groundY);
   drawBlock(x, groundY, 96, 56, palette.amber);
   const c = blockCenter(x, groundY, 56);
   ctx.fillStyle = palette.ink;
@@ -5208,7 +5286,7 @@ function drawActionReaction(v) {
   const w = state.width;
   const h = state.height;
   const y = h * 0.58;
-  const phase = Math.min(1.8, wrap(state.time, 3));
+  const phase = Math.min(1.8, state.time);
   const leftMove = 0.5 * (v.force / v.massA) * phase * phase * 38;
   const rightMove = 0.5 * (v.force / v.massB) * phase * phase * 38;
   const leftX = w * 0.5 - 42 - leftMove;
@@ -5341,14 +5419,14 @@ function drawInertia(v) {
   drawGround(y + 30);
   const a = v.friction * G / Math.sqrt(v.mass);
   const tStop = a > 0 ? v.initialSpeed / a : 100;
-  const t = wrap(state.time, Math.min(7, tStop + 1.5));
+  const t = Math.min(state.time, Math.min(7, tStop + 1.5));
   const movingT = Math.min(t, tStop);
   const s = v.initialSpeed * movingT - 0.5 * a * movingT * movingT;
   const x = 70 + clamp(s * 42, 0, w - 150);
   drawCar(x, y, palette.coral, "小车");
   vector({ x, y: y - 58 }, Math.max(18, (v.initialSpeed - a * movingT) * 20), 0, palette.coral, "v");
   if (v.showIdeal) {
-    const idealX = 70 + wrap(v.initialSpeed * state.time * 42, w - 150);
+    const idealX = 70 + clamp(v.initialSpeed * state.time * 42, 0, w - 150);
     drawCar(idealX, y + 92, palette.teal, "理想光滑");
     vector({ x: idealX, y: y + 34 }, v.initialSpeed * 20, 0, palette.teal, "匀速");
   }
@@ -5363,7 +5441,7 @@ function drawFmaExperiment(v) {
   const y = h * 0.32;
   drawGround(y + 28);
   const a = v.force / v.mass;
-  const x = 70 + wrap(0.5 * a * state.time * state.time * 50, w - 150);
+  const x = 70 + clamp(0.5 * a * state.time * state.time * 50, 0, w - 150);
   drawCar(x, y, palette.coral, "实验小车");
   vector({ x: x + 34, y: y - 8 }, clamp(v.force * 18, 18, 130), 0, palette.coral, "F");
   const frame = plotFrame(48, h * 0.48, w - 96, h * 0.42, v.experimentMode === "force" ? "控制 m：a-F 图像" : "控制 F：a-1/m 图像", v.experimentMode === "force" ? "F/N" : "1/m", "a");
@@ -5411,7 +5489,8 @@ function drawNewtonSecond(v) {
     return;
   }
   const y = h * 0.58;
-  const x = 80 + wrap(0.5 * a * state.time * state.time * 15 + 180, w - 160);
+  const motion = clamp(0.5 * Math.abs(a) * state.time * state.time * 15, 0, w * 0.5 - 110);
+  const x = w * 0.5 + Math.sign(a || 1) * motion;
   drawGround(y + 28);
   drawCar(x, y, palette.amber, "受力小车");
   const c = { x, y: y - 8 };
@@ -5516,7 +5595,7 @@ function drawApplications(v) {
   ctx.fill();
   ctx.stroke();
   ctx.restore();
-  const s = a > 0 ? wrap(0.5 * a * state.time * state.time * 35, length - 80) : length * 0.35;
+  const s = a > 0 ? clamp(0.5 * a * state.time * state.time * 35, 0, length - 80) : length * 0.35;
   const bx = top.x - s * Math.cos(angle);
   const by = top.y + s * Math.sin(angle);
   ctx.save();
@@ -5599,7 +5678,7 @@ function drawCurvedMotion(v) {
   const x0 = 70;
   const y0 = h * 0.68;
   const T = 4.6;
-  const t = wrap(state.time, T);
+  const t = Math.min(state.time, T);
   const sx = v.speed * t;
   const sy = 0.5 * v.sideAccel * t * t;
   const scale = Math.min(42, (w - 140) / (v.speed * T + 1));
@@ -5655,7 +5734,7 @@ function drawMotionComposition(v) {
   const vx = v.riverSpeed + v.boatSpeed * Math.sin(toRad(v.heading));
   const vy = v.boatSpeed * Math.cos(toRad(v.heading));
   const crossTime = riverW / Math.max(0.1, vy * 32);
-  const t = wrap(state.time, crossTime + 1);
+  const t = Math.min(state.time, crossTime);
   const progress = Math.min(1, t / crossTime);
   const startX = w * 0.48;
   const startY = riverBottom;
@@ -5700,8 +5779,7 @@ function drawBoat(x, y, angle, color) {
 }
 
 function projectileState(v0x, v0y, g, duration) {
-  const t = wrap(state.time, duration + 0.8);
-  const liveT = Math.min(t, duration);
+  const liveT = Math.min(state.time, duration);
   return { t: liveT, x: v0x * liveT, y: v0y * liveT - 0.5 * g * liveT * liveT };
 }
 
@@ -6958,7 +7036,8 @@ function drawMomentumBasic(v) {
   const w = state.width;
   const h = state.height;
   const y = h * 0.6;
-  const x = 90 + wrap(190 + v.velocity * state.time * 34, w - 180);
+  const travel = clamp(v.velocity * state.time * 34, -(w - 250), w - 250);
+  const x = w * 0.5 + travel;
   drawGround(y + 28);
   drawCar(x, y, palette.amber, "研究对象");
   if (v.showVector) vector({ x, y: y - 56 }, Math.sign(v.velocity || 1) * clamp(Math.abs(v.mass * v.velocity) * 12, 18, 150), 0, palette.coral, `p=${(v.mass * v.velocity).toFixed(1)}`);
@@ -6992,7 +7071,7 @@ function drawMomentumConservation(v) {
   const h = state.height;
   const y = h * 0.6;
   const p = v.m1 * v.v1 + v.m2 * v.v2;
-  const phase = Math.min(1, wrap(state.time, 3) / 1.5);
+  const phase = clamp(state.time / 1.5, 0, 1);
   const x1 = w * 0.34 + (v.v1 * phase * 34);
   const x2 = w * 0.66 + (v.v2 * phase * 34);
   drawGround(y + 28);
@@ -7048,7 +7127,7 @@ function drawCollisionTypes(v) {
   const h = state.height;
   const y = h * 0.56;
   const res = collisionResult(v);
-  const t = wrap(state.time, 4);
+  const t = Math.min(state.time, 4);
   const before = t < 2;
   const x1 = before ? w * 0.28 + v.v1 * t * 26 : w * 0.48 + res.u1 * (t - 2) * 26;
   const x2 = before ? w * 0.72 + v.v2 * t * 26 : w * 0.52 + res.u2 * (t - 2) * 26;
@@ -7068,7 +7147,7 @@ function drawRecoilRocket(v) {
   const h = state.height;
   const thrust = v.exhaustSpeed * v.flowRate;
   const a = thrust / v.rocketMass;
-  const x = 90 + wrap(0.5 * a * state.time ** 2 * 120, w - 180);
+  const x = 90 + clamp(0.5 * a * state.time ** 2 * 120, 0, w - 180);
   const y = h * 0.55;
   ctx.save();
   ctx.translate(x, y);
@@ -7103,7 +7182,7 @@ function drawSimpleHarmonic(v) {
   const h = state.height;
   const mid = h * 0.38;
   const x = w * 0.42 + v.amplitude * Math.cos(v.omega * state.time + toRad(v.phase));
-  drawSpring(70, mid, x - 26, 8, 14);
+  drawHorizontalSpring(70, mid, x - 26, 8, 14);
   drawBlock(x, mid + 28, 58, 46, palette.amber);
   ctx.strokeStyle = palette.line;
   ctx.beginPath();
@@ -7163,7 +7242,7 @@ function drawShmEnergy(v) {
   const omega = Math.sqrt(v.k / v.mass);
   const x = v.amplitude * Math.cos(omega * state.time);
   const px = w * 0.42 + x;
-  drawSpring(70, mid, px - 28, 8, 14);
+  drawHorizontalSpring(70, mid, px - 28, 8, 14);
   drawBlock(px, mid + 28, 56, 44, palette.amber);
   vector({ x: px, y: mid - 52 }, -x * v.k, 0, palette.teal, "F=-kx");
   const ep = 0.5 * v.k * x * x;
@@ -7227,7 +7306,7 @@ function drawForcedResonance(v) {
   const h = state.height;
   const amp = clamp(resonanceAmp(v) * 18, 18, 150);
   const x = w * 0.42 + amp * Math.sin(TAU * v.driveF * state.time);
-  drawSpring(70, h * 0.36, x - 24, 8, 12);
+  drawHorizontalSpring(70, h * 0.36, x - 24, 8, 12);
   drawBlock(x, h * 0.39, 54, 42, palette.amber);
   if (v.showCurve) {
     const frame = plotFrame(48, h * 0.52, w - 96, h * 0.36, "共振曲线", "f", "A");
@@ -9110,7 +9189,7 @@ function drawMomentumWorkshop(v) {
   drawGround(y + 46);
   if (v.model === "collision2d") {
     const theta = toRad(v.angle2d);
-    const phase = wrap(state.time, 4) / 4;
+    const phase = clamp(state.time / 4, 0, 1);
     const before = phase < 0.5;
     const t = before ? phase / 0.5 : (phase - 0.5) / 0.5;
     const center = { x: w * 0.48, y: h * 0.47 };
@@ -9140,7 +9219,7 @@ function drawMomentumWorkshop(v) {
     vector(b2, before ? -68 : 78 * Math.cos(theta), before ? -35 : 58 * Math.sin(theta), palette.coral, "p₂");
     label("px、py 分别守恒", 74, 58, palette.ink, "left", 17);
   } else if (v.model === "rocket") {
-    const x = w * 0.42 + wrap(vcm * state.time * 24, w * 0.25) - w * 0.12;
+    const x = w * 0.42 + clamp(vcm * state.time * 24, -w * 0.18, w * 0.18);
     roundRect(x - 58, y - 54, 116, 54, 18, palette.coral, palette.ink);
     label("火箭", x, y - 27, "#fff", "center", 15);
     for (let i = 0; i < 7; i += 1) arrow(x - 62 - i * 12, y - 26 + Math.sin(state.time * 5 + i) * 14, x - 98 - i * 16, y - 26, palette.amber, 2);
@@ -9154,7 +9233,7 @@ function drawMomentumWorkshop(v) {
     vector({ x: w * 0.39, y: y + 62 }, -v.v1 * v.m1 / v.m2 * 18, 0, palette.teal, "船");
   } else if (v.model === "pendulum") {
     const pivot = { x: w * 0.34, y: 76 };
-    const phase = wrap(state.time, 5) / 5;
+    const phase = clamp(state.time / 5, 0, 1);
     const release = phase > 0.46;
     const swing = toRad(42) * Math.cos(phase * Math.PI * 1.4);
     const bob = release
@@ -9205,7 +9284,7 @@ function drawMomentumWorkshop(v) {
     label("凹槽与小球构成水平外力近似为零的系统", 60, 62, palette.ink, "left", 16);
   } else if (v.model === "ballSlope") {
     const theta = toRad(clamp(v.angle2d, 8, 58));
-    const phase = wrap(state.time * 0.22, 1);
+    const phase = clamp(state.time * 0.22, 0, 1);
     const wedgeX = w * 0.44 - phase * 72;
     const baseY = y + 42;
     const length = 280;
@@ -9238,7 +9317,7 @@ function drawMomentumWorkshop(v) {
     vector({ x: w * 0.5 - sep / 2, y: y - 66 }, -v.m2 * 16, 0, palette.blue, "p₁");
     vector({ x: w * 0.5 + sep / 2, y: y - 66 }, v.m1 * 16, 0, palette.coral, "p₂");
   } else if (v.model === "explosion") {
-    const phase = Math.min(1, wrap(state.time, 3) / 1.6);
+    const phase = clamp(state.time / 1.6, 0, 1);
     const sep = phase * 230;
     drawBlock(w * 0.5 - sep * v.m2 / (v.m1 + v.m2), y, 68, 44, palette.blue);
     drawBlock(w * 0.5 + sep * v.m1 / (v.m1 + v.m2), y, 68, 44, palette.coral);
@@ -9254,7 +9333,7 @@ function drawMomentumWorkshop(v) {
     const u2 = v.v2;
     const v1p = (v.m1 * u1 + v.m2 * u2 - v.m2 * e * (u1 - u2)) / (v.m1 + v.m2);
     const v2p = (v.m1 * u1 + v.m2 * u2 + v.m1 * e * (u1 - u2)) / (v.m1 + v.m2);
-    const phase = wrap(state.time, 4) / 4;
+    const phase = clamp(state.time / 4, 0, 1);
     const before = phase < 0.5;
     const t = before ? phase / 0.5 : (phase - 0.5) / 0.5;
     const x1 = before ? lerp(110, w * 0.45, t) : lerp(w * 0.45, w * 0.45 + v1p * 35, t);
@@ -9297,7 +9376,7 @@ function drawInclineWorkshop(v) {
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-    const s = wrap(state.time * 0.18, 1);
+    const s = clamp(state.time * 0.18, 0, 1);
     const bx = lerp(top.x, base.x + 36, s);
     const by = lerp(top.y, base.y - 18, s);
     ctx.save();
@@ -9918,7 +9997,11 @@ function switchTopic(topicId) {
 }
 
 function syncPlaybackControls() {
-  playToggle.textContent = state.playing ? "暂停" : "继续";
+  const enabled = isPlaybackRelevant();
+  playControls.hidden = !enabled;
+  if (speedControl) speedControl.hidden = !enabled;
+  state.playing = enabled;
+  if (!enabled) state.time = 0;
 }
 
 bookSwitcher.addEventListener("click", (event) => {
@@ -9983,28 +10066,10 @@ canvas.addEventListener("pointermove", (event) => {
   handleCanvasInteraction(event);
 });
 
-startDemo.addEventListener("click", () => {
+restartDemo.addEventListener("click", () => {
   state.time = 0;
-  state.playing = true;
   state.lastFrame = performance.now();
   syncPlaybackControls();
-  drawFrame();
-});
-
-playToggle.addEventListener("click", () => {
-  state.playing = !state.playing;
-  syncPlaybackControls();
-});
-
-endDemo.addEventListener("click", () => {
-  state.playing = false;
-  state.time = 0;
-  syncPlaybackControls();
-  drawFrame();
-});
-
-resetTime.addEventListener("click", () => {
-  state.time = 0;
   drawFrame();
 });
 

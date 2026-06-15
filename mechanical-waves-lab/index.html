@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>高中物理动态演示台 | 教材全六册 + 章节专题演示</title>
-    <link rel="stylesheet" href="./styles.css?v=20260615-topic-rail" />
+    <link rel="stylesheet" href="./styles.css?v=20260615-physics-qa" />
   </head>
   <body>
     <div class="app-shell">
@@ -42,10 +42,7 @@
           </div>
 
           <div class="play-controls" aria-label="播放控制">
-            <button id="startDemo" class="primary-button" type="button">开始</button>
-            <button id="playToggle" class="primary-button" type="button">暂停</button>
-            <button id="endDemo" class="ghost-button" type="button">结束</button>
-            <button id="resetTime" class="ghost-button" type="button">重置</button>
+            <button id="restartDemo" class="primary-button" type="button">重来一次</button>
             <label class="speed-control">
               <span>演示速度</span>
               <input id="speedRange" type="range" min="0.25" max="2.2" value="1" step="0.05" />
@@ -94,6 +91,6 @@
       </main>
     </div>
 
-    <script src="./app-required1.js?v=20260615-integrated-topics"></script>
+    <script src="./app-required1.js?v=20260615-physics-qa"></script>
   </body>
 </html>
