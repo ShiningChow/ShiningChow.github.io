@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>高中物理动态演示台 | 教材全六册 + 力学专题实验库</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="课程导航">
+        <div class="brand-block">
+          <div class="brand-mark">PHY</div>
+          <div>
+            <p class="eyebrow">高中物理动态演示台</p>
+            <h1>必修第一册</h1>
+          </div>
+        </div>
+
+        <div class="chapter-meta">
+          <span>人教版 2019</span>
+          <span>课堂投屏</span>
+          <span>125 节 + 6 专题</span>
+        </div>
+
+        <nav id="lessonNav" class="lesson-nav"></nav>
+
+        <div class="roadmap">
+          <p class="eyebrow">产品蓝图</p>
+          <p>
+            当前版本覆盖必修第一册、必修第二册、必修第三册、选择性必修第一册、选择性必修第二册和选择性必修第三册，共 27 章 125 节，并新增力学专题实验库 6 个综合模型，按“教材册 + 章节目录 + 动态画布 + 参数面板 + 教师脚本”组织课堂演示。
+          </p>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p id="lessonUnit" class="eyebrow"></p>
+            <h2 id="lessonTitle"></h2>
+            <p id="lessonSubtitle" class="subtitle"></p>
+          </div>
+
+          <div class="play-controls" aria-label="播放控制">
+            <button id="playToggle" class="primary-button" type="button">暂停</button>
+            <button id="resetTime" class="ghost-button" type="button">重置</button>
+            <label class="speed-control">
+              <span>演示速度</span>
+              <input id="speedRange" type="range" min="0.25" max="2.2" value="1" step="0.05" />
+            </label>
+          </div>
+        </header>
+
+        <section class="stage-grid">
+          <section class="stage-panel" aria-label="动态演示画布">
+            <div class="stage-toolbar">
+              <div>
+                <p class="eyebrow">实时演示</p>
+                <strong id="stageCaption"></strong>
+              </div>
+              <div id="quickStats" class="quick-stats"></div>
+            </div>
+            <canvas id="waveCanvas"></canvas>
+            <div id="readout" class="readout" aria-live="polite"></div>
+          </section>
+
+          <aside class="control-panel" aria-label="演示参数">
+            <div class="panel-heading">
+              <p class="eyebrow">参数面板</p>
+              <h3>课堂可调变量</h3>
+            </div>
+            <div id="controlGroups" class="control-groups"></div>
+          </aside>
+        </section>
+
+        <section class="teacher-board" aria-label="教师提示">
+          <article>
+            <p class="eyebrow">课堂追问</p>
+            <ul id="questionList"></ul>
+          </article>
+          <article>
+            <p class="eyebrow">板书公式</p>
+            <div id="formulaBox" class="formula-box"></div>
+          </article>
+          <article>
+            <p class="eyebrow">演示脚本</p>
+            <ol id="scriptList"></ol>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <script src="./app-required1.js?v=20260615-mechanics-lab"></script>
+  </body>
+</html>
